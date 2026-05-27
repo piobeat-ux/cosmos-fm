@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - WEBAPP_URL=${WEBAPP_URL}
+      - ADMIN_WEBAPP_URL=${ADMIN_WEBAPP_URL}
+      - DATABASE_URL=file:./data/dev.db
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+  admin:
+    build: ./admin
+    ports:
+      - "3001:80"
+    restart: unless-stopped

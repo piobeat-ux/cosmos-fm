@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Host {
+  id                Int        @id @default(autoincrement())
+  name              String
+  initials          String
+  position          String
+  bio               String
+  photoUrl          String?
+  telegramUsername  String?
+  createdAt         DateTime   @default(now())
+  shows             Show[]
+  podcasts          Podcast[]
+}
+
+model Show {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  coverUrl    String?
+  hostId      Int
+  host        Host       @relation(fields: [hostId], references: [id])
+  schedule    Schedule[]
+  podcasts    Podcast[]
+  stream      RadioStream?
+  createdAt   DateTime   @default(now())
+}
+
+model Schedule {
+  id          Int      @id @default(autoincrement())
+  showId      Int
+  show        Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  isActive    Boolean  @default(true)
+}
+
+model Podcast {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  audioUrl    String
+  coverUrl    String?
+  showId      Int
+  show        Show     @relation(fields: [showId], references: [id])
+  hostId      Int
+  host        Host     @relation(fields: [hostId], references: [id])
+  duration    Int      @default(0)
+  playCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model RadioStream {
+  id            Int      @id @default(autoincrement())
+  name          String   @default("Cosmos FM Live")
+  streamUrl     String
+  isActive      Boolean  @default(true)
+  currentShowId Int?     @unique
+  currentShow   Show?    @relation(fields: [currentShowId], references: [id])
+  updatedAt     DateTime @updatedAt
+}
+
+model Admin {
+  id          Int      @id @default(autoincrement())
+  telegramId  BigInt   @unique
+  role        String   @default("editor")
+  createdAt   DateTime @default(now())
+}
+
+model Stats {
+  id          Int      @id @default(autoincrement())
+  type        String
+  targetId    Int
+  createdAt   DateTime @default(now())
+}
