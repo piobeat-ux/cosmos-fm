@@ -17,8 +17,6 @@ import { HostsPage } from '@/admin/pages/HostsPage';
 import { PodcastsPage } from '@/admin/pages/PodcastsPage';
 import { CategoriesPage } from '@/admin/pages/CategoriesPage';
 import { SettingsPage } from '@/admin/pages/SettingsPage';
-import { HotelsPage } from '@/admin/pages/HotelsPage';
-import { NavigationPage } from '@/admin/pages/NavigationPage';
 
 function useHashRouter() {
   const [hash, setHash] = useState(window.location.hash);
@@ -33,7 +31,7 @@ function useHashRouter() {
 function FrontLayout() {
   const hash = useHashRouter();
   const [activeTab, setActiveTab] = useState('home');
-  const { settings } = useData();
+  const { settings, loading } = useData();
   const { playLiveStream, currentTrack } = useAudio();
 
   useEffect(() => {
@@ -47,10 +45,11 @@ function FrontLayout() {
 
   // Авто-загрузка стрима
   useEffect(() => {
-    if (settings.stream_url && !currentTrack) {
+    if (!loading && settings.stream_url && !currentTrack) {
+      console.log('Auto-loading stream:', settings.stream_url);
       playLiveStream(settings.stream_url, 'Cosmos FM Эфир');
     }
-  }, [settings.stream_url, currentTrack, playLiveStream]);
+  }, [settings.stream_url, currentTrack, playLiveStream, loading]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -68,6 +67,19 @@ function FrontLayout() {
       default: return <HomeSection />;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <span className="text-4xl">📻</span>
+          </div>
+          <p className="text-[#71717a]">Загрузка...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
@@ -97,8 +109,6 @@ function AdminRoutes() {
     else if (h.includes('/hosts')) setAdminPage('hosts');
     else if (h.includes('/podcasts')) setAdminPage('podcasts');
     else if (h.includes('/categories')) setAdminPage('categories');
-    else if (h.includes('/hotels')) setAdminPage('hotels');
-    else if (h.includes('/navigation')) setAdminPage('navigation');
     else if (h.includes('/settings')) setAdminPage('settings');
     else setAdminPage('dashboard');
   }, [hash]);
@@ -116,8 +126,6 @@ function AdminRoutes() {
       case 'hosts': return <HostsPage />;
       case 'podcasts': return <PodcastsPage />;
       case 'categories': return <CategoriesPage />;
-      case 'hotels': return <HotelsPage />;
-      case 'navigation': return <NavigationPage />;
       case 'settings': return <SettingsPage />;
       default: return <DashboardPage />;
     }
@@ -133,6 +141,7 @@ function AdminRoutes() {
 function App() {
   const hash = useHashRouter();
   const isAdmin = hash.startsWith('#/admin');
+
   return (
     <AudioProvider>
       <DataProvider>
