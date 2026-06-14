@@ -1,0 +1,83 @@
+export interface Show {
+  id: string;
+  title: string;
+  description?: string;
+  host_name?: string;
+  time?: string;
+  duration?: string;
+  category?: string;
+  day_of_week?: string;
+  is_live?: boolean;
+  cover_url?: string;
+  created_at?: string;
+}
+
+export interface Host {
+  id: string;
+  name: string;
+  role?: string;
+  hotel?: string;
+  bio?: string;
+  photo_url?: string;
+  shows?: string[];
+  schedule?: string;
+  color?: string;
+  initials?: string;
+  created_at?: string;
+}
+
+export interface Podcast {
+  id: string;
+  title: string;
+  description?: string;
+  host_name?: string;
+  episodes?: number;
+  duration?: string;
+  category?: string;
+  likes?: number;
+  color?: string;
+  audio_url?: string;
+  cover_url?: string;
+  created_at?: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  count?: number;
+  color?: string;
+  created_at?: string;
+}
+
+export interface SiteSettings {
+  site_title?: string;
+  hero_title?: string;
+  hero_subtitle?: string;
+  hero_description?: string;
+  stream_url?: string;
+  primary_color?: string;
+  [key: string]: string | undefined;
+}
+
+export const DEFAULT_SETTINGS: SiteSettings = {
+  site_title: 'Cosmos FM',
+  hero_title: 'Голос вашего отеля',
+  hero_subtitle: 'Звуки вашего космоса',
+  hero_description: 'Первый в России корпоративный медиа-канал в индустрии гостеприимства',
+  stream_url: '',
+  primary_color: '#6366f1',
+};
+
+export const DAYS_OF_WEEK = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+export const CATEGORIES_LIST = [
+  'Музыка',
+  'Новости',
+  'Развлечения',
+  'Обучение',
+  'Истории',
+  'Утреннее шоу',
+  'Разговорное',
+  'Бизнес',
+  'Кулинария',
+];
