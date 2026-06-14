@@ -44,12 +44,13 @@ function FrontLayout() {
   }, [hash]);
 
   // Авто-загрузка стрима
-  useEffect(() => {
-    if (!loading && settings.stream_url && !currentTrack) {
-      console.log('Auto-loading stream:', settings.stream_url);
-      playLiveStream(settings.stream_url, 'Cosmos FM Эфир');
-    }
-  }, [settings.stream_url, currentTrack, playLiveStream, loading]);
+ // Не автовоспроизводить, а просто подготовить плеер
+useEffect(() => {
+  if (!loading && settings.stream_url) {
+    console.log('Stream URL loaded, waiting for user interaction');
+    // НЕ вызывать playLiveStream автоматически
+  }
+}, [settings.stream_url, loading]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
