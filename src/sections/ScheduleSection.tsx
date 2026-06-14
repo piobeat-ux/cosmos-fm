@@ -9,11 +9,11 @@ export function ScheduleSection() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('Все');
 
-  const categories = ['Все', ...new Set(shows.map(s => s.category).filter(Boolean))];
+  const categories: string[] = ['Все', ...Array.from(new Set(shows.map((s: any) => s.category).filter(Boolean)))];
 
-  const filteredShows = shows.filter(show => {
+  const filteredShows = shows.filter((show: any) => {
     const matchesSearch = show.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         show.host_name?.toLowerCase().includes(searchQuery.toLowerCase());
+                         (show.host_name || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = activeCategory === 'Все' || show.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
@@ -28,25 +28,14 @@ export function ScheduleSection() {
           <p className="text-lg text-[#71717a]">Наши передачи и шоу</p>
         </div>
 
-        {/* Search */}
         <div className="mb-6">
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Поиск передач и ведущих..."
-          />
+          <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Поиск передач и ведущих..." />
         </div>
 
-        {/* Filters */}
         <div className="mb-8">
-          <FilterChips
-            filters={categories}
-            activeFilter={activeCategory}
-            onChange={setActiveCategory}
-          />
+          <FilterChips filters={categories} activeFilter={activeCategory} onChange={setActiveCategory} />
         </div>
 
-        {/* Shows */}
         <div className="space-y-4">
           {filteredShows.length === 0 ? (
             <div className="text-center py-12 text-[#71717a]">
@@ -54,12 +43,8 @@ export function ScheduleSection() {
               <p>Передачи не найдены</p>
             </div>
           ) : (
-            filteredShows.map((show, index) => (
-              <div
-                key={show.id}
-                className={`show-card slide-up ${show.is_live ? 'live' : ''}`}
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
+            filteredShows.map((show: any, index: number) => (
+              <div key={show.id} className={`show-card slide-up ${show.is_live ? 'live' : ''}`} style={{ animationDelay: `${index * 0.05}s` }}>
                 <div className="flex items-center gap-4">
                   {show.cover_url ? (
                     <img src={show.cover_url} alt={show.title} className="w-20 h-20 rounded-xl object-cover" />
@@ -68,17 +53,13 @@ export function ScheduleSection() {
                       <Radio className="w-10 h-10 text-white" />
                     </div>
                   )}
-
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-xl font-bold truncate">{show.title}</h3>
                       {show.is_live && (
-                        <span className="px-2 py-0.5 rounded-full bg-[#ef4444]/20 text-[#ef4444] text-xs font-bold">
-                          LIVE
-                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-[#ef4444]/20 text-[#ef4444] text-xs font-bold">LIVE</span>
                       )}
                     </div>
-                    
                     <div className="flex items-center gap-4 text-sm text-[#71717a] flex-wrap">
                       {show.host_name && (
                         <div className="flex items-center gap-1">
@@ -92,12 +73,9 @@ export function ScheduleSection() {
                       </div>
                       {show.duration && <span>{show.duration}</span>}
                       {show.category && (
-                        <span className="category-badge bg-[#6366f1]/20 text-[#6366f1]">
-                          {show.category}
-                        </span>
+                        <span className="category-badge bg-[#6366f1]/20 text-[#6366f1]">{show.category}</span>
                       )}
                     </div>
-
                     {show.description && (
                       <p className="text-sm text-[#a1a1aa] mt-2 line-clamp-2">{show.description}</p>
                     )}

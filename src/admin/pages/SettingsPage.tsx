@@ -97,7 +97,7 @@ export function SettingsPage() {
             <ImageUpload
               value={form.hero_cover_image}
               onChange={(v) => handleChange('hero_cover_image', v)}
-              previewSize="lg"
+              
             />
           </div>
         </div>
@@ -149,7 +149,7 @@ export function SettingsPage() {
             <ImageUpload
               value={form.current_show_cover}
               onChange={(v) => handleChange('current_show_cover', v)}
-              previewSize="md"
+              
             />
           </div>
         </div>
