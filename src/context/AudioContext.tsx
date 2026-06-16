@@ -2,13 +2,6 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 
 const AudioContext = createContext(undefined);
 
-// Тестовые HTTPS потоки (для демонстрации)
-const TEST_STREAMS = [
-  { url: 'https://stream.radioparadise.com/aac-128', title: 'Radio Paradise' },
-  { url: 'https://icecast.walmradio.com:8443/live', title: 'Walm Radio' },
-  { url: 'https://npr-ice.streamguys1.com/live.mp3', title: 'NPR News' },
-];
-
 export function AudioProvider({ children }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(null);
@@ -50,19 +43,32 @@ export function AudioProvider({ children }) {
       };
 
       const handleError = (e) => {
-        console.error('Audio error event:', e);
+        console.error('Audio error:', e);
         setIsLoading(false);
         setIsPlaying(false);
         
         const mediaError = e.target?.error;
         let errorMsg = 'Ошибка воспроизведения';
+        let errorType = 'unknown';
         
         if (mediaError) {
           switch (mediaError.code) {
-            case 1: errorMsg = 'Воспроизведение прервано пользователем'; break;
-            case 2: errorMsg = 'Сетевая ошибка (проверьте URL)'; break;
-            case 3: errorMsg = 'Ошибка декодирования аудио'; break;
-            case 4: errorMsg = 'Формат не поддерживается браузером'; break;
+            case 1: 
+              errorMsg = 'Воспроизведение прервано'; 
+              errorType = 'aborted';
+              break;
+            case 2: 
+              errorMsg = 'Сетевая ошибка: ссылка недоступна'; 
+              errorType = 'network';
+              break;
+            case 3: 
+              errorMsg = 'Ошибка декодирования аудиофайла'; 
+              errorType = 'decode';
+              break;
+            case 4: 
+              errorMsg = 'Формат не поддерживается. Попробуйте MP3 или AAC (HTTPS)'; 
+              errorType = 'format';
+              break;
           }
         }
         setError(errorMsg);
@@ -74,9 +80,7 @@ export function AudioProvider({ children }) {
         setError(null);
         setIsPlaying(true);
       };
-      const handleCanPlay = () => {
-        setIsLoading(false);
-      };
+      const handleCanPlay = () => setIsLoading(false);
 
       audio.addEventListener('timeupdate', handleTimeUpdate);
       audio.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -89,13 +93,6 @@ export function AudioProvider({ children }) {
       return () => {
         audio.pause();
         audio.src = '';
-        audio.removeEventListener('timeupdate', handleTimeUpdate);
-        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        audio.removeEventListener('ended', handleEnded);
-        audio.removeEventListener('error', handleError);
-        audio.removeEventListener('waiting', handleWaiting);
-        audio.removeEventListener('playing', handlePlaying);
-        audio.removeEventListener('canplay', handleCanPlay);
       };
     } catch (err) {
       console.error('Failed to init audio:', err);
@@ -106,7 +103,6 @@ export function AudioProvider({ children }) {
     if (audioRef.current) audioRef.current.volume = volume / 100;
   }, [volume]);
 
-  // Проверка HTTPS
   const checkUrl = useCallback((url) => {
     if (!url) return { valid: false, reason: 'URL не указан' };
     if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http:')) {
@@ -124,7 +120,6 @@ export function AudioProvider({ children }) {
     const check = checkUrl(url);
     if (!check.valid) {
       setError(check.reason);
-      console.error('Stream blocked:', check.reason);
       return;
     }
     
@@ -133,9 +128,7 @@ export function AudioProvider({ children }) {
     setError(null);
     setIsLoading(true);
     
-    // Прерываем предыдущее воспроизведение
     if (currentUrlRef.current === url && isPlaying) {
-      console.log('Already playing this stream');
       return;
     }
     
@@ -151,16 +144,10 @@ export function AudioProvider({ children }) {
         .then(() => {
           console.log('Stream playing:', title);
           setIsPlaying(true);
-          setCurrentTrack({ 
-            id: 'live-' + Date.now(), 
-            title, 
-            isLive: true, 
-            type: 'stream', 
-            audio_url: url 
-          });
+          setCurrentTrack({ id: 'live-' + Date.now(), title, isLive: true, type: 'stream', audio_url: url });
         })
         .catch(err => {
-          console.error('Play failed:', err.name, err.message);
+          console.error('Play failed:', err);
           setIsLoading(false);
           if (err.name === 'NotAllowedError') {
             setError('Нажмите кнопку Play для запуска');
@@ -188,9 +175,7 @@ export function AudioProvider({ children }) {
     setError(null);
     setIsLoading(true);
     
-    // Прерываем если тот же трек уже играет
     if (currentUrlRef.current === track.audio_url && isPlaying) {
-      console.log('Already playing this track');
       return;
     }
     
@@ -209,13 +194,9 @@ export function AudioProvider({ children }) {
           setCurrentTrack(track);
         })
         .catch(err => {
-          console.error('Play failed:', err.name, err.message);
+          console.error('Play failed:', err);
           setIsLoading(false);
-          if (err.name === 'NotAllowedError') {
-            setError('Нажмите Play для запуска');
-          } else {
-            setError('Ошибка: ' + err.message);
-          }
+          setError('Ошибка: ' + err.message);
         });
     }
   }, [checkUrl, isPlaying]);
@@ -235,7 +216,7 @@ export function AudioProvider({ children }) {
           .then(() => setIsPlaying(true))
           .catch(err => {
             setIsLoading(false);
-            setError('Ошибка воспроизведения: ' + err.message);
+            setError('Ошибка: ' + err.message);
           });
       }
     }
@@ -254,13 +235,13 @@ export function AudioProvider({ children }) {
   }, []);
 
   const setVolume = useCallback((v) => setVolumeState(v), []);
+  const clearError = useCallback(() => setError(null), []);
 
   return (
     <AudioContext.Provider value={{
       isPlaying, currentTrack, volume, progress, duration, 
       isLiveStream, error, isLoading,
-      playLiveStream, playTrack, togglePlay, stop, setVolume,
-      testStreams: TEST_STREAMS,
+      playLiveStream, playTrack, togglePlay, stop, setVolume, clearError,
     }}>
       {children}
     </AudioContext.Provider>

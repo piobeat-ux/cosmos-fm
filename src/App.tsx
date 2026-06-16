@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DataProvider, useData } from '@/context/DataContext';
-import { AudioProvider, useAudio } from '@/context/AudioContext';
+import { AudioProvider } from '@/context/AudioContext';
 import { Header } from '@/components/Header';
 import { MiniPlayer } from '@/components/MiniPlayer';
 import { BottomNav } from '@/components/BottomNav';
@@ -9,6 +9,7 @@ import { ScheduleSection } from '@/sections/ScheduleSection';
 import { HostsSection } from '@/sections/HostsSection';
 import { PodcastsSection } from '@/sections/PodcastsSection';
 import { AboutSection } from '@/sections/AboutSection';
+import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { LoginPage } from '@/admin/pages/LoginPage';
 import { AdminLayout } from '@/admin/components/AdminLayout';
 import { DashboardPage } from '@/admin/pages/DashboardPage';
@@ -31,8 +32,7 @@ function useHashRouter() {
 function FrontLayout() {
   const hash = useHashRouter();
   const [activeTab, setActiveTab] = useState('home');
-  const { settings, loading } = useData();
-  const { playLiveStream, currentTrack } = useAudio();
+  const { loading } = useData();
 
   useEffect(() => {
     const h = window.location.hash;
@@ -42,15 +42,6 @@ function FrontLayout() {
     else if (h === '#/about' || h === '#about') setActiveTab('about');
     else setActiveTab('home');
   }, [hash]);
-
-  // Авто-загрузка стрима
- // Не автовоспроизводить, а просто подготовить плеер
-useEffect(() => {
-  if (!loading && settings.stream_url) {
-    console.log('Stream URL loaded, waiting for user interaction');
-    // НЕ вызывать playLiveStream автоматически
-  }
-}, [settings.stream_url, loading]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -89,6 +80,7 @@ useEffect(() => {
         {renderContent()}
       </main>
       <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+      <PwaInstallPrompt />
       <MiniPlayer />
     </div>
   );
