@@ -69,3 +69,45 @@ img { max-width: 100%; height: auto; }
 ::-webkit-scrollbar-track { background: #B6E0EE; }
 ::-webkit-scrollbar-thumb { background: #28B9D0; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #685096; }
+
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .animate-float,
+  .animate-float-slow,
+  .animate-ping-slow {
+    animation-duration: 0s !important;
+  }
+  
+  img {
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+  
+  button {
+    -webkit-tap-highlight-color: rgba(40, 185, 208, 0.2);
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile loading optimization */
+@media (max-width: 768px) {
+  .glass-card {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

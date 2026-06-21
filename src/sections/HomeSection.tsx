@@ -22,6 +22,18 @@ export function HomeSection({ onTabChange }) {
   const [localNeppyPhrase, setLocalNeppyPhrase] = useState('ПРИВЕТ! Я НЭППИ');
   const [loadAttempts, setLoadAttempts] = useState(0);
 
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+
   // Preload image function
   const preloadImage = (url) => {
     return new Promise((resolve, reject) => {
@@ -184,7 +196,7 @@ export function HomeSection({ onTabChange }) {
                       alt="Neppy Character" 
                       className="relative w-full h-full object-contain"
                       style={{
-                        animation: isPlaying ? 'bounceCharacter 0.6s ease-in-out infinite' : 'float 6s ease-in-out infinite',
+                        animation: isMobile ? 'none' : (isPlaying ? 'bounceCharacter 0.6s ease-in-out infinite' : 'float 6s ease-in-out infinite'),
                         filter: isPlaying ? 'drop-shadow(0 0 60px rgba(40, 185, 208, 0.9))' : 'drop-shadow(0 20px 50px rgba(0,0,0,0.25))'
                       }}
                       onLoad={() => { 

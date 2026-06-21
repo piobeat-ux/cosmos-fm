@@ -1,0 +1,11 @@
+# Посмотреть текущую ветку
+git branch
+
+# Откатиться к тегу (создаст detached HEAD)
+git checkout v1.0.0-checkpoint
+
+# Или создать новую ветку из тега
+git checkout -b restore-from-checkpoint v1.0.0-checkpoint
+
+# Вернуться на main
+git checkout main

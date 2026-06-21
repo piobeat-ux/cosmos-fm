@@ -8,12 +8,38 @@ export function AudioProvider({ children }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const audioRef = useRef(null);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  // Mobile audio unlock
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (audioRef.current) {
+        audioRef.current.play().then(() => {
+          audioRef.current.pause();
+        }).catch(() => {
+          // Ignore errors
+        });
+      }
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('click', unlockAudio);
+    };
+    
+    document.addEventListener('touchstart', unlockAudio);
+    document.addEventListener('click', unlockAudio);
+    
+    return () => {
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('click', unlockAudio);
+    };
+  }, []);
+
 
   // Инициализация audio элемента
   useEffect(() => {
     if (!audioRef.current) {
       audioRef.current = new Audio();
-      audioRef.current.preload = 'none';
+      audioRef.current.preload = 'metadata';
     }
     
     const audio = audioRef.current;
@@ -22,6 +48,7 @@ export function AudioProvider({ children }) {
       console.log('✅ Audio can play');
       setIsLoading(false);
       setError(null);
+      setDuration(audio.duration || 0);
     };
 
     const handleWaiting = () => {
@@ -41,9 +68,10 @@ export function AudioProvider({ children }) {
     };
 
     const handleEnded = () => {
-      console.log('️ Audio ended');
+      console.log('⏹️ Audio ended');
       setIsPlaying(false);
       setIsLoading(false);
+      setProgress(0);
     };
 
     const handleError = (e) => {
@@ -53,12 +81,18 @@ export function AudioProvider({ children }) {
       setError('Ошибка воспроизведения');
     };
 
+    const handleTimeUpdate = () => {
+      setProgress(audio.currentTime || 0);
+      setDuration(audio.duration || 0);
+    };
+
     audio.addEventListener('canplay', handleCanPlay);
     audio.addEventListener('waiting', handleWaiting);
     audio.addEventListener('playing', handlePlaying);
     audio.addEventListener('pause', handlePause);
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('error', handleError);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
 
     return () => {
       audio.removeEventListener('canplay', handleCanPlay);
@@ -67,6 +101,7 @@ export function AudioProvider({ children }) {
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('error', handleError);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
     };
   }, []);
 
@@ -89,19 +124,15 @@ export function AudioProvider({ children }) {
       return;
     }
 
-    // Если тот же трек - просто возобновляем
-    if (currentTrack?.id === track.id && audio.src) {
-      console.log('🔄 Resuming same track');
-      audio.play().then(() => {
-        setIsPlaying(true);
-      }).catch(err => {
-        console.error('❌ Resume failed:', err);
-        setIsLoading(false);
-      });
+    // Если тот же трек и играет - ставим на паузу
+    if (currentTrack?.id === track.id && isPlaying) {
+      console.log('🔄 Same track, toggling pause');
+      audio.pause();
+      setIsPlaying(false);
       return;
     }
 
-    // Новый трек - загружаем
+    // Новый трек или другой - загружаем и играем
     try {
       audio.pause();
       audio.src = track.audio_url;
@@ -110,6 +141,7 @@ export function AudioProvider({ children }) {
       
       audio.play().then(() => {
         console.log('✅ Play started');
+        setIsPlaying(true);
       }).catch(err => {
         console.error('❌ Play failed:', err);
         setIsLoading(false);
@@ -120,7 +152,7 @@ export function AudioProvider({ children }) {
       setIsLoading(false);
       setError('Ошибка воспроизведения');
     }
-  }, [currentTrack]);
+  }, [currentTrack, isPlaying]);
 
   const pauseTrack = useCallback(() => {
     console.log('⏸️ Pausing track');
@@ -160,6 +192,15 @@ export function AudioProvider({ children }) {
       setIsPlaying(false);
       setIsLoading(false);
       setError(null);
+      setProgress(0);
+      setDuration(0);
+    }
+  }, []);
+
+  const seekTo = useCallback((time) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+      setProgress(time);
     }
   }, []);
 
@@ -169,11 +210,14 @@ export function AudioProvider({ children }) {
       isPlaying,
       isLoading,
       error,
+      progress,
+      duration,
       playTrack,
       pauseTrack,
       togglePlay,
       playLiveStream,
       stopTrack,
+      seekTo,
     }}>
       {children}
     </AudioContext.Provider>

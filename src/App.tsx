@@ -10,6 +10,7 @@ import { ScheduleSection } from '@/sections/ScheduleSection';
 import { HostsSection } from '@/sections/HostsSection';
 import { PodcastsSection } from '@/sections/PodcastsSection';
 import { AboutSection } from '@/sections/AboutSection';
+import { FAQSection } from '@/sections/FAQSection';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { LoginPage } from '@/admin/pages/LoginPage';
 import { AdminLayout } from '@/admin/components/AdminLayout';
@@ -59,6 +60,7 @@ function FrontLayout() {
       case 'hosts': return <HostsSection />;
       case 'podcasts': return <PodcastsSection />;
       case 'about': return <AboutSection />;
+      case 'faq': return <FAQSection />;
       default: return <HomeSection onTabChange={handleTabChange} />;
     }
   };
@@ -143,10 +145,49 @@ function AdminRoutes() {
 }
 
 function App() {
+
+  const [connectionStatus, setConnectionStatus] = useState<'good' | 'slow' | 'offline'>('good');
+  
+  useEffect(() => {
+    const updateConnection = () => {
+      const conn = (navigator as any).connection;
+      if (conn) {
+        if (conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g') {
+          setConnectionStatus('slow');
+        } else if (!navigator.onLine) {
+          setConnectionStatus('offline');
+        } else {
+          setConnectionStatus('good');
+        }
+      }
+    };
+    
+    updateConnection();
+    window.addEventListener('online', updateConnection);
+    window.addEventListener('offline', updateConnection);
+    
+    return () => {
+      window.removeEventListener('online', updateConnection);
+      window.removeEventListener('offline', updateConnection);
+    };
+  }, []);
+
   const hash = useHashRouter();
   const isAdmin = hash.startsWith('#/admin');
 
   return (
+    
+      {connectionStatus === 'slow' && (
+        <div className="fixed top-20 left-4 right-4 z-50 p-3 rounded-xl bg-yellow-500/90 text-white text-center text-sm font-bold shadow-lg">
+          ⚠️ Медленное соединение - загрузка может занять больше времени
+        </div>
+      )}
+      {connectionStatus === 'offline' && (
+        <div className="fixed top-20 left-4 right-4 z-50 p-3 rounded-xl bg-red-500/90 text-white text-center text-sm font-bold shadow-lg">
+          ❌ Нет подключения к интернету
+        </div>
+      )}
+
     <AudioProvider>
       <DataProvider>
         {isAdmin ? <AdminRoutes /> : <FrontLayout />}

@@ -31,6 +31,7 @@ export function PodcastsPage() {
   };
 
   return (
+            
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold flex items-center gap-2"><Music className="w-6 h-6 text-[#6366f1]" /> Подкасты <span className="text-sm text-[#4A6578]">({podcasts.length})</span></h1>
