@@ -47,7 +47,6 @@ function FrontLayout() {
   }, [hash]);
 
   const handleTabChange = (tab) => {
-    console.log(' Tab changed to:', tab);
     setActiveTab(tab);
     window.location.hash = tab === 'home' ? '#/' : '#/' + tab;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -66,21 +65,21 @@ function FrontLayout() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#B6E0EE' }}>
         <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <span className="text-4xl">📻</span>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse" style={{ background: 'linear-gradient(135deg, #28B9D0, #685096)' }}>
+            <span className="text-4xl"></span>
           </div>
-          <p className="text-[#71717a]">Загрузка...</p>
+          <p style={{ color: '#4A6578' }}>Загрузка...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
+    <div className="min-h-screen" style={{ background: '#B6E0EE' }}>
       <Header onTabChange={handleTabChange} activeTab={activeTab} />
-      <main className="pt-20 pb-32 section-padding max-w-6xl mx-auto">
+      <main>
         {renderContent()}
       </main>
       <Footer />
@@ -103,8 +102,6 @@ function AdminRoutes() {
 
   useEffect(() => {
     const h = window.location.hash;
-    console.log(' Admin hash:', h);
-    
     if (h.includes('/shows')) setAdminPage('shows');
     else if (h.includes('/hosts')) setAdminPage('hosts');
     else if (h.includes('/podcasts')) setAdminPage('podcasts');
@@ -118,7 +115,6 @@ function AdminRoutes() {
   const handleLogin = () => { localStorage.setItem('cosmos_fm_admin', 'true'); setIsLoggedIn(true); };
   const handleLogout = () => { localStorage.removeItem('cosmos_fm_admin'); setIsLoggedIn(false); window.location.hash = ''; };
   const navigateTo = (page) => { 
-    console.log('🎯 Navigate to:', page);
     setAdminPage(page); 
     window.location.hash = '#/admin' + (page === 'dashboard' ? '' : '/' + page); 
   };

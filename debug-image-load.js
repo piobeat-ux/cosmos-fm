@@ -1,4 +1,8 @@
-import { useState, useEffect } from 'react';
+import fs from 'fs';
+
+console.log('🔍 Adding detailed debug logging...\n');
+
+const homeContent = `import { useState, useEffect } from 'react';
 import { Radio, Music, Mic, Play, Pause, Loader2 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { useAudio } from '@/context/AudioContext';
@@ -20,68 +24,25 @@ export function HomeSection({ onTabChange }) {
   const [imageError, setImageError] = useState(false);
   const [localNeppyImage, setLocalNeppyImage] = useState('');
   const [localNeppyPhrase, setLocalNeppyPhrase] = useState('ПРИВЕТ! Я НЭППИ');
-  const [loadAttempts, setLoadAttempts] = useState(0);
 
-  // Preload image function
-  const preloadImage = (url) => {
-    return new Promise((resolve, reject) => {
-      console.log('🔄 Preloading image:', url);
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      img.onload = () => {
-        console.log('✅ Image preloaded successfully!');
-        console.log('   Width:', img.width);
-        console.log('   Height:', img.height);
-        resolve(img);
-      };
-      
-      img.onerror = (e) => {
-        console.error('❌ Image preload failed:', url);
-        console.error('   Error:', e);
-        reject(e);
-      };
-      
-      img.src = url;
-      
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        if (!img.complete) {
-          console.error('⏱️ Image preload timeout');
-          reject(new Error('Timeout'));
-        }
-      }, 10000);
-    });
-  };
-
+  // Debug: Log all settings
   useEffect(() => {
-    console.log('🎨 Settings changed:', settings);
-    console.log('📊 hero_cover_image:', settings?.hero_cover_image);
+    console.log('='.repeat(60));
+    console.log('🔍 DEBUG - Settings received in HomeSection:');
+    console.log('Full settings object:', settings);
+    console.log('settings.neppy_image:', settings?.neppy_image);
+    console.log('settings.neppy_phrase:', settings?.neppy_phrase);
+    console.log('Version:', version);
+    console.log('='.repeat(60));
     
-    if (settings?.hero_cover_image && settings.hero_cover_image.trim() !== '') {
-      const imageUrl = settings.hero_cover_image;
-      console.log('✅ Using hero_cover_image:', imageUrl);
-      
-      // Preload image before showing
-      preloadImage(imageUrl)
-        .then(() => {
-          console.log('✅ Preload successful, setting image');
-          setLocalNeppyImage(imageUrl);
-          setImageLoaded(true);
-          setImageError(false);
-          setLoadAttempts(0);
-        })
-        .catch((error) => {
-          console.error('❌ Preload failed:', error);
-          setImageError(true);
-          setImageLoaded(false);
-          setLoadAttempts(prev => prev + 1);
-        });
-    } else {
-      console.log('⚠️ hero_cover_image is empty');
-      setLocalNeppyImage('');
-      setImageError(false);
+    if (settings?.neppy_image && settings.neppy_image.trim() !== '') {
+      console.log('✅ neppy_image exists, setting:', settings.neppy_image);
+      setLocalNeppyImage(settings.neppy_image);
       setImageLoaded(false);
+      setImageError(false);
+    } else {
+      console.log('❌ neppy_image is empty or not set');
+      setLocalNeppyImage('');
     }
     
     if (settings?.neppy_phrase) {
@@ -108,13 +69,10 @@ export function HomeSection({ onTabChange }) {
 
   const hasValidImage = localNeppyImage && localNeppyImage.trim() !== '' && !imageError && imageLoaded;
 
-  console.log('📊 Render state:', {
-    localNeppyImage: localNeppyImage?.substring(0, 80),
-    hasValidImage,
-    imageLoaded,
-    imageError,
-    loadAttempts
-  });
+  console.log('📊 Render - localNeppyImage:', localNeppyImage);
+  console.log('📊 Render - hasValidImage:', hasValidImage);
+  console.log('📊 Render - imageLoaded:', imageLoaded);
+  console.log('📊 Render - imageError:', imageError);
 
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ background: COLORS.bg }}>
@@ -188,11 +146,16 @@ export function HomeSection({ onTabChange }) {
                         filter: isPlaying ? 'drop-shadow(0 0 60px rgba(40, 185, 208, 0.9))' : 'drop-shadow(0 20px 50px rgba(0,0,0,0.25))'
                       }}
                       onLoad={() => { 
-                        console.log('✅ Image element loaded');
+                        console.log('✅ IMAGE LOADED SUCCESSFULLY!');
+                        console.log('   URL:', localNeppyImage);
+                        setImageLoaded(true); 
+                        setImageError(false); 
                       }}
                       onError={(e) => { 
-                        console.error('❌ Image element error');
-                        setImageError(true);
+                        console.error('❌ IMAGE LOAD FAILED!');
+                        console.error('   URL:', localNeppyImage);
+                        console.error('   Error:', e);
+                        setImageError(true); 
                         setImageLoaded(false);
                       }}
                     />
@@ -216,57 +179,19 @@ export function HomeSection({ onTabChange }) {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-white/50 rounded-3xl">
                     <div className="text-center p-6">
-                      {loadAttempts > 0 ? (
-                        <>
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: '#FEE2E2' }}>
-                            <span className="text-4xl">❌</span>
-                          </div>
-                          <p className="text-sm sm:text-base font-bold mb-2" style={{ color: COLORS.text }}>
-                            Не удалось загрузить
-                          </p>
-                          <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
-                            Попыток: {loadAttempts}
-                          </p>
-                          <button 
-                            onClick={() => {
-                              console.log('🔄 Retrying image load...');
-                              setLoadAttempts(0);
-                              if (settings?.hero_cover_image) {
-                                preloadImage(settings.hero_cover_image)
-                                  .then(() => {
-                                    setLocalNeppyImage(settings.hero_cover_image);
-                                    setImageLoaded(true);
-                                    setImageError(false);
-                                  })
-                                  .catch(() => {
-                                    setImageError(true);
-                                    setLoadAttempts(prev => prev + 1);
-                                  });
-                              }
-                            }}
-                            className="px-4 py-2 rounded-lg text-sm font-bold text-white"
-                            style={{ background: COLORS.neppy }}
-                          >
-                            Попробовать снова
-                          </button>
-                          <button 
-                            onClick={() => window.open(localNeppyImage || settings?.hero_cover_image, '_blank')}
-                            className="mt-2 text-xs underline"
-                            style={{ color: COLORS.purple }}
-                          >
-                            Открыть URL
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <Loader2 className="w-16 h-16 sm:w-20 sm:h-20 animate-spin mx-auto mb-4" style={{ color: COLORS.purple }} />
-                          <p className="text-sm sm:text-base font-bold" style={{ color: COLORS.text }}>
-                            Загрузка персонажа...
-                          </p>
-                          <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
-                            Предзагрузка изображения
-                          </p>
-                        </>
+                      <Loader2 className="w-16 h-16 sm:w-20 sm:h-20 animate-spin mx-auto mb-4" style={{ color: COLORS.purple }} />
+                      <p className="text-sm sm:text-base font-bold" style={{ color: COLORS.text }}>
+                        {imageError ? 'Ошибка загрузки' : 'Загрузка персонажа...'}
+                      </p>
+                      {imageError && (
+                        <p className="text-xs mt-2" style={{ color: '#EF4444' }}>
+                          Проверьте URL в админке
+                        </p>
+                      )}
+                      {!localNeppyImage && (
+                        <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
+                          Добавьте URL в настройках
+                        </p>
                       )}
                     </div>
                   </div>
@@ -360,7 +285,7 @@ export function HomeSection({ onTabChange }) {
         </div>
       </div>
 
-      <style>{`
+      <style>{\`
         @keyframes bounceCharacter {
           0%, 100% { transform: translateY(0) scale(1); }
           50% { transform: translateY(-20px) scale(1.03); }
@@ -395,7 +320,26 @@ export function HomeSection({ onTabChange }) {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-      `}</style>
+      \`}</style>
     </div>
   );
 }
+`;
+
+fs.writeFileSync('src/sections/HomeSection.tsx', homeContent);
+console.log('✅ Added detailed debug logging');
+
+console.log('\n📋 Теперь откройте консоль браузера (F12) и посмотрите:');
+console.log('1. Должны появиться логи с "🔍 DEBUG - Settings received"');
+console.log('2. Проверьте что settings.neppy_image содержит ваш URL');
+console.log('3. Если URL есть - проверьте что он правильный (скопируйте и откройте в новой вкладке)');
+console.log('4. Если URL правильный но не грузится - проверьте CORS и доступность файла');
+
+console.log('\n🔍 Что проверить:');
+console.log('- Откройте админку → Настройки');
+console.log('- Скопируйте URL из поля "Обложка Hero"');
+console.log('- Вставьте в новую вкладку браузера');
+console.log('- Если изображение показывается - URL правильный');
+console.log('- Если ошибка 404 - файл не найден в Storage');
+
+console.log('\n🚀 Run: npm run dev');

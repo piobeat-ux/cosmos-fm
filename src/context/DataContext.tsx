@@ -42,7 +42,8 @@ const DEMO_DATA = {
     hero_description: 'Первый в России корпоративный медиа-канал',
     stream_url: 'https://stream.radioparadise.com/aac-128',
     primary_color: '#6366f1',
-    neppy_image: ''
+    neppy_image: '',
+    neppy_phrase: 'ПРИВЕТ! Я НЭППИ'
   }
 };
 

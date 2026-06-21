@@ -6,10 +6,8 @@
   * {
     border-color: #28B9D040;
   }
-  html {
+  html, body {
     scroll-behavior: smooth;
-  }
-  body {
     background-color: #B6E0EE;
     color: #1A2B3C;
     font-family: 'Circe', 'Inter', system-ui, sans-serif;
@@ -19,31 +17,19 @@
     width: 100%;
     overflow-x: hidden;
   }
-  
+  body {
+    background-color: #B6E0EE;
+  }
   h1, h2, h3, h4, h5, h6 {
     color: #1A2B3C;
     font-weight: 700;
   }
-  
   p, span, div, li, a, button {
     color: #1A2B3C;
   }
 }
 
 @layer components {
-  .gradient-text {
-    background-clip: text;
-    -webkit-background-clip: text;
-    background-image: linear-gradient(135deg, #28B9D0 0%, #685096 100%);
-  }
-  
-  .glass-card {
-    background-color: #FFFFFFF0;
-    backdrop-filter: blur(12px);
-    border: 1px solid #28B9D030;
-    box-shadow: 0 8px 32px #68509615;
-  }
-  
   .btn-primary {
     padding: 0.75rem 1.5rem;
     border-radius: 0.75rem;
@@ -51,72 +37,35 @@
     color: white;
     background: linear-gradient(135deg, #28B9D0 0%, #685096 100%);
   }
-  
-  .search-input {
-    background-color: #FFFFFF;
-    color: #1A2B3C;
-    border: 2px solid #28B9D040;
+  .glass-card {
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(40, 185, 208, 0.2);
   }
 }
 
-
-/* Admin Panel Light Theme */
-.admin-card {
-  background-color: #FFFFFF;
-  border: 1px solid rgba(40, 185, 208, 0.2);
-  border-radius: 1rem;
-  box-shadow: 0 4px 12px rgba(104, 80, 150, 0.1);
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-30px) rotate(120deg); }
+  66% { transform: translateY(30px) rotate(240deg); }
 }
 
-.admin-input {
-  background-color: #F5FBFD;
-  border: 1px solid rgba(40, 185, 208, 0.3);
-  border-radius: 0.75rem;
-  color: #1A2B3C;
-  padding: 0.75rem 1rem;
+.animate-float { animation: float 20s ease-in-out infinite; }
+
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+  background-color: #B6E0EE !important;
 }
 
-.admin-input:focus {
-  outline: none;
-  border-color: #28B9D0;
-  box-shadow: 0 0 0 3px rgba(40, 185, 208, 0.2);
+img { max-width: 100%; height: auto; }
+
+@media (max-width: 640px) {
+  h1 { font-size: 2rem !important; }
+  h2 { font-size: 1.5rem !important; }
 }
 
-.admin-input::placeholder {
-  color: #4A6578;
-}
-
-.admin-button-primary {
-  background: linear-gradient(135deg, #28B9D0 0%, #685096 100%);
-  color: #FFFFFF;
-  border-radius: 0.75rem;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
-  transition: all 0.3s;
-}
-
-.admin-button-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(40, 185, 208, 0.4);
-}
-
-.admin-modal {
-  background-color: #FFFFFF;
-  border-radius: 1.5rem;
-  border: 1px solid rgba(40, 185, 208, 0.2);
-  box-shadow: 0 20px 60px rgba(104, 80, 150, 0.2);
-}
-
-.admin-label {
-  color: #4A6578;
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-
-.admin-title {
-  color: #1A2B3C;
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #B6E0EE; }
+::-webkit-scrollbar-thumb { background: #28B9D0; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #685096; }

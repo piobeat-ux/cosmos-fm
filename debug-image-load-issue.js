@@ -1,4 +1,8 @@
-import { useState, useEffect } from 'react';
+import fs from 'fs';
+
+console.log('🔧 Adding better image loading debug...\n');
+
+const homeContent = `import { useState, useEffect } from 'react';
 import { Radio, Music, Mic, Play, Pause, Loader2 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { useAudio } from '@/context/AudioContext';
@@ -22,66 +26,19 @@ export function HomeSection({ onTabChange }) {
   const [localNeppyPhrase, setLocalNeppyPhrase] = useState('ПРИВЕТ! Я НЭППИ');
   const [loadAttempts, setLoadAttempts] = useState(0);
 
-  // Preload image function
-  const preloadImage = (url) => {
-    return new Promise((resolve, reject) => {
-      console.log('🔄 Preloading image:', url);
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      img.onload = () => {
-        console.log('✅ Image preloaded successfully!');
-        console.log('   Width:', img.width);
-        console.log('   Height:', img.height);
-        resolve(img);
-      };
-      
-      img.onerror = (e) => {
-        console.error('❌ Image preload failed:', url);
-        console.error('   Error:', e);
-        reject(e);
-      };
-      
-      img.src = url;
-      
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        if (!img.complete) {
-          console.error('⏱️ Image preload timeout');
-          reject(new Error('Timeout'));
-        }
-      }, 10000);
-    });
-  };
-
   useEffect(() => {
     console.log('🎨 Settings changed:', settings);
     console.log('📊 hero_cover_image:', settings?.hero_cover_image);
     
     if (settings?.hero_cover_image && settings.hero_cover_image.trim() !== '') {
-      const imageUrl = settings.hero_cover_image;
-      console.log('✅ Using hero_cover_image:', imageUrl);
-      
-      // Preload image before showing
-      preloadImage(imageUrl)
-        .then(() => {
-          console.log('✅ Preload successful, setting image');
-          setLocalNeppyImage(imageUrl);
-          setImageLoaded(true);
-          setImageError(false);
-          setLoadAttempts(0);
-        })
-        .catch((error) => {
-          console.error('❌ Preload failed:', error);
-          setImageError(true);
-          setImageLoaded(false);
-          setLoadAttempts(prev => prev + 1);
-        });
+      console.log('✅ Using hero_cover_image:', settings.hero_cover_image);
+      setLocalNeppyImage(settings.hero_cover_image);
+      setImageLoaded(false);
+      setImageError(false);
+      setLoadAttempts(0);
     } else {
       console.log('⚠️ hero_cover_image is empty');
       setLocalNeppyImage('');
-      setImageError(false);
-      setImageLoaded(false);
     }
     
     if (settings?.neppy_phrase) {
@@ -104,6 +61,37 @@ export function HomeSection({ onTabChange }) {
     } else if (settings.stream_url) {
       playLiveStream(settings.stream_url, settings.site_title || 'Cosmos FM');
     }
+  };
+
+  const handleImageLoad = () => {
+    console.log('✅ IMAGE LOADED SUCCESSFULLY!');
+    console.log('   URL:', localNeppyImage);
+    setImageLoaded(true);
+    setImageError(false);
+  };
+
+  const handleImageError = (e) => {
+    console.error('❌ IMAGE LOAD FAILED!');
+    console.error('   URL:', localNeppyImage);
+    console.error('   Error event:', e);
+    console.error('   Load attempts:', loadAttempts);
+    
+    setImageError(true);
+    setImageLoaded(false);
+    setLoadAttempts(prev => prev + 1);
+    
+    // Try to fetch the image to see what's wrong
+    fetch(localNeppyImage)
+      .then(response => {
+        console.log('📡 Fetch response status:', response.status);
+        console.log('📡 Fetch response ok:', response.ok);
+        if (!response.ok) {
+          console.error('❌ Server returned:', response.status, response.statusText);
+        }
+      })
+      .catch(fetchError => {
+        console.error('❌ Fetch failed:', fetchError);
+      });
   };
 
   const hasValidImage = localNeppyImage && localNeppyImage.trim() !== '' && !imageError && imageLoaded;
@@ -187,14 +175,8 @@ export function HomeSection({ onTabChange }) {
                         animation: isPlaying ? 'bounceCharacter 0.6s ease-in-out infinite' : 'float 6s ease-in-out infinite',
                         filter: isPlaying ? 'drop-shadow(0 0 60px rgba(40, 185, 208, 0.9))' : 'drop-shadow(0 20px 50px rgba(0,0,0,0.25))'
                       }}
-                      onLoad={() => { 
-                        console.log('✅ Image element loaded');
-                      }}
-                      onError={(e) => { 
-                        console.error('❌ Image element error');
-                        setImageError(true);
-                        setImageLoaded(false);
-                      }}
+                      onLoad={handleImageLoad}
+                      onError={handleImageError}
                     />
                     
                     <div className="absolute top-2 right-0 sm:top-6 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-2xl shadow-xl z-40" style={{ 
@@ -216,57 +198,31 @@ export function HomeSection({ onTabChange }) {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-white/50 rounded-3xl">
                     <div className="text-center p-6">
-                      {loadAttempts > 0 ? (
-                        <>
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: '#FEE2E2' }}>
-                            <span className="text-4xl">❌</span>
-                          </div>
-                          <p className="text-sm sm:text-base font-bold mb-2" style={{ color: COLORS.text }}>
-                            Не удалось загрузить
+                      <Loader2 className="w-16 h-16 sm:w-20 sm:h-20 animate-spin mx-auto mb-4" style={{ color: COLORS.purple }} />
+                      <p className="text-sm sm:text-base font-bold" style={{ color: COLORS.text }}>
+                        {imageError ? 'Ошибка загрузки' : 'Загрузка персонажа...'}
+                      </p>
+                      {imageError && (
+                        <div className="mt-3 space-y-2">
+                          <p className="text-xs" style={{ color: '#EF4444' }}>
+                            Не удалось загрузить изображение
                           </p>
-                          <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>
-                            Попыток: {loadAttempts}
+                          <p className="text-xs" style={{ color: COLORS.textMuted }}>
+                            URL: {localNeppyImage?.substring(0, 60)}...
                           </p>
                           <button 
-                            onClick={() => {
-                              console.log('🔄 Retrying image load...');
-                              setLoadAttempts(0);
-                              if (settings?.hero_cover_image) {
-                                preloadImage(settings.hero_cover_image)
-                                  .then(() => {
-                                    setLocalNeppyImage(settings.hero_cover_image);
-                                    setImageLoaded(true);
-                                    setImageError(false);
-                                  })
-                                  .catch(() => {
-                                    setImageError(true);
-                                    setLoadAttempts(prev => prev + 1);
-                                  });
-                              }
-                            }}
-                            className="px-4 py-2 rounded-lg text-sm font-bold text-white"
-                            style={{ background: COLORS.neppy }}
-                          >
-                            Попробовать снова
-                          </button>
-                          <button 
-                            onClick={() => window.open(localNeppyImage || settings?.hero_cover_image, '_blank')}
-                            className="mt-2 text-xs underline"
+                            onClick={() => window.open(localNeppyImage, '_blank')}
+                            className="text-xs px-3 py-1 rounded-lg bg-[#28B9D0]/20 hover:bg-[#28B9D0]/30 transition"
                             style={{ color: COLORS.purple }}
                           >
-                            Открыть URL
+                            Открыть URL в новой вкладке
                           </button>
-                        </>
-                      ) : (
-                        <>
-                          <Loader2 className="w-16 h-16 sm:w-20 sm:h-20 animate-spin mx-auto mb-4" style={{ color: COLORS.purple }} />
-                          <p className="text-sm sm:text-base font-bold" style={{ color: COLORS.text }}>
-                            Загрузка персонажа...
-                          </p>
-                          <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
-                            Предзагрузка изображения
-                          </p>
-                        </>
+                        </div>
+                      )}
+                      {!localNeppyImage && (
+                        <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
+                          Добавьте URL в поле "Обложка Hero"
+                        </p>
                       )}
                     </div>
                   </div>
@@ -360,7 +316,7 @@ export function HomeSection({ onTabChange }) {
         </div>
       </div>
 
-      <style>{`
+      <style>{\`
         @keyframes bounceCharacter {
           0%, 100% { transform: translateY(0) scale(1); }
           50% { transform: translateY(-20px) scale(1.03); }
@@ -395,7 +351,27 @@ export function HomeSection({ onTabChange }) {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-      `}</style>
+      \`}</style>
     </div>
   );
 }
+`;
+
+fs.writeFileSync('src/sections/HomeSection.tsx', homeContent);
+console.log('✅ Added detailed image loading debug');
+
+console.log('\n📋 Changes:');
+console.log('1. ✅ Added handleImageLoad with console.log');
+console.log('2. ✅ Added handleImageError with fetch() to test URL');
+console.log('3. ✅ Added "Open URL in new tab" button when error occurs');
+console.log('4. ✅ Shows load attempts counter');
+
+console.log('\n🔍 Now:');
+console.log('1. Refresh the page');
+console.log('2. Check console for:');
+console.log('   - "✅ IMAGE LOADED SUCCESSFULLY!" - if it works');
+console.log('   - "❌ IMAGE LOAD FAILED!" - if it fails');
+console.log('   - Fetch response status - to see HTTP status');
+console.log('3. Click "Open URL in new tab" button to test if image exists');
+
+console.log('\n🚀 Run: npm run dev');
