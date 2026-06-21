@@ -2,28 +2,23 @@
 const CACHE_NAME = 'cosmos-fm-v1';
 const RUNTIME_CACHE = 'cosmos-fm-runtime-v1';
 
-// Ресурсы для кэширования при установке
 const PRECACHE_URLS = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/icon.svg'
+  '/manifest.json'
 ];
 
-// Установка SW - кэшируем основные ресурсы
+// Установка SW
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('[SW] Caching app shell');
-        return cache.addAll(PRECACHE_URLS);
-      })
+      .then(cache => cache.addAll(PRECACHE_URLS))
       .then(() => self.skipWaiting())
   );
 });
 
-// Активация SW - удаляем старые кэши
+// Активация SW
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activating...');
   event.waitUntil(
@@ -31,47 +26,55 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames
           .filter(name => name !== CACHE_NAME && name !== RUNTIME_CACHE)
-          .map(name => {
-            console.log('[SW] Deleting old cache:', name);
-            return caches.delete(name);
-          })
+          .map(name => caches.delete(name))
       );
     }).then(() => self.clients.claim())
   );
 });
 
-// Стратегия: Network First для API, Cache First для статики
+// Стратегия кэширования
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
+  const { request } = event;
+  const url = new URL(request.url);
+  
+  // НЕ кэшируем POST запросы
+  if (request.method === 'POST') {
+    return;
+  }
+  
+  // НЕ кэшируем WebSocket
+  if (url.protocol === 'ws:' || url.protocol === 'wss:') {
+    return;
+  }
   
   // Supabase API - Network First
   if (url.hostname.includes('supabase.co')) {
     event.respondWith(
-      fetch(event.request)
+      fetch(request)
         .then(response => {
           if (response.ok) {
             const clone = response.clone();
-            caches.open(RUNTIME_CACHE).then(cache => cache.put(event.request, clone));
+            caches.open(RUNTIME_CACHE).then(cache => cache.put(request, clone));
           }
           return response;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => caches.match(request))
     );
     return;
   }
   
   // Статические ресурсы - Cache First
-  if (event.request.destination === 'style' || 
-      event.request.destination === 'script' ||
-      event.request.destination === 'image' ||
-      event.request.destination === 'font') {
+  if (request.destination === 'style' || 
+      request.destination === 'script' ||
+      request.destination === 'image' ||
+      request.destination === 'font') {
     event.respondWith(
-      caches.match(event.request).then(cached => {
+      caches.match(request).then(cached => {
         if (cached) return cached;
-        return fetch(event.request).then(response => {
+        return fetch(request).then(response => {
           if (response.ok) {
             const clone = response.clone();
-            caches.open(RUNTIME_CACHE).then(cache => cache.put(event.request, clone));
+            caches.open(RUNTIME_CACHE).then(cache => cache.put(request, clone));
           }
           return response;
         });
@@ -81,13 +84,13 @@ self.addEventListener('fetch', (event) => {
   }
   
   // HTML страницы - Network First
-  if (event.request.mode === 'navigate') {
+  if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request)
+      fetch(request)
         .then(response => {
           if (response.ok) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
           }
           return response;
         })
@@ -98,19 +101,19 @@ self.addEventListener('fetch', (event) => {
   
   // Остальное - Network First
   event.respondWith(
-    fetch(event.request)
+    fetch(request)
       .then(response => {
         if (response.ok) {
           const clone = response.clone();
-          caches.open(RUNTIME_CACHE).then(cache => cache.put(event.request, clone));
+          caches.open(RUNTIME_CACHE).then(cache => cache.put(request, clone));
         }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() => caches.match(request))
   );
 });
 
-// Обработка сообщений от приложения
+// Обработка сообщений
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') {
     self.skipWaiting();

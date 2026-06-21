@@ -62,38 +62,38 @@ export function SettingsPage() {
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-[#a1a1aa] mb-2">Заголовок</label>
+              <label className="block text-sm text-[#4A6578] mb-2">Заголовок</label>
               <input
                 type="text"
                 value={form.hero_title}
                 onChange={(e) => handleChange('hero_title', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
                 placeholder="Голос вашего отеля"
               />
             </div>
             <div>
-              <label className="block text-sm text-[#a1a1aa] mb-2">Подзаголовок</label>
+              <label className="block text-sm text-[#4A6578] mb-2">Подзаголовок</label>
               <input
                 type="text"
                 value={form.hero_subtitle}
                 onChange={(e) => handleChange('hero_subtitle', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
                 placeholder="Звуки вашего космоса"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm text-[#a1a1aa] mb-2">Описание</label>
+            <label className="block text-sm text-[#4A6578] mb-2">Описание</label>
             <textarea
               value={form.hero_description}
               onChange={(e) => handleChange('hero_description', e.target.value)}
               rows={3}
-              className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none resize-none"
+              className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none resize-none"
               placeholder="Описание на главной странице..."
             />
           </div>
           <div>
-            <label className="block text-sm text-[#a1a1aa] mb-2">Обложка Hero</label>
+            <label className="block text-sm text-[#4A6578] mb-2">Обложка Hero</label>
             <ImageUpload
               value={form.hero_cover_image}
               onChange={(v) => handleChange('hero_cover_image', v)}
@@ -108,44 +108,44 @@ export function SettingsPage() {
         <SectionTitle icon={Radio} title="Прямой эфир" />
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-[#a1a1aa] mb-2">
+            <label className="block text-sm text-[#4A6578] mb-2">
               Ссылка на аудиопоток <span className="text-[#6366f1]">*</span>
             </label>
             <input
               type="url"
               value={form.stream_url}
               onChange={(e) => handleChange('stream_url', e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+              className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
               placeholder="https://stream.example.com/live.mp3"
             />
-            <p className="text-xs text-[#71717a] mt-1">
+            <p className="text-xs text-[#4A6578] mt-1">
               Вставьте прямую ссылку на аудиопоток (MP3, AAC, OGG). Например: https://stream.cosmosfm.ru/live
             </p>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-[#a1a1aa] mb-2">Название текущего шоу</label>
+              <label className="block text-sm text-[#4A6578] mb-2">Название текущего шоу</label>
               <input
                 type="text"
                 value={form.current_show_title}
                 onChange={(e) => handleChange('current_show_title', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
                 placeholder="Утренний кофе"
               />
             </div>
             <div>
-              <label className="block text-sm text-[#a1a1aa] mb-2">Ведущий</label>
+              <label className="block text-sm text-[#4A6578] mb-2">Ведущий</label>
               <input
                 type="text"
                 value={form.current_show_host}
                 onChange={(e) => handleChange('current_show_host', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
                 placeholder="Анна Петрова"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm text-[#a1a1aa] mb-2">Обложка текущего шоу</label>
+            <label className="block text-sm text-[#4A6578] mb-2">Обложка текущего шоу</label>
             <ImageUpload
               value={form.current_show_cover}
               onChange={(v) => handleChange('current_show_cover', v)}
@@ -161,31 +161,31 @@ export function SettingsPage() {
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-[#a1a1aa] mb-2">Название сайта</label>
+              <label className="block text-sm text-[#4A6578] mb-2">Название сайта</label>
               <input
                 type="text"
                 value={form.site_name}
                 onChange={(e) => handleChange('site_name', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm text-[#a1a1aa] mb-2">Слоган</label>
+              <label className="block text-sm text-[#4A6578] mb-2">Слоган</label>
               <input
                 type="text"
                 value={form.site_tagline}
                 onChange={(e) => handleChange('site_tagline', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm text-[#a1a1aa] mb-2">Текст "О нас"</label>
+            <label className="block text-sm text-[#4A6578] mb-2">Текст "О нас"</label>
             <textarea
               value={form.about_text}
               onChange={(e) => handleChange('about_text', e.target.value)}
               rows={4}
-              className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none resize-none"
+              className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none resize-none"
             />
           </div>
         </div>
@@ -197,73 +197,73 @@ export function SettingsPage() {
         <div className="space-y-4">
           <div className="grid sm:grid-cols-3 gap-4">
             <div>
-              <label className="flex items-center gap-2 text-sm text-[#a1a1aa] mb-2">
+              <label className="flex items-center gap-2 text-sm text-[#4A6578] mb-2">
                 <Mail className="w-4 h-4" /> Email
               </label>
               <input
                 type="email"
                 value={form.contact_email}
                 onChange={(e) => handleChange('contact_email', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
               />
             </div>
             <div>
-              <label className="flex items-center gap-2 text-sm text-[#a1a1aa] mb-2">
+              <label className="flex items-center gap-2 text-sm text-[#4A6578] mb-2">
                 <Phone className="w-4 h-4" /> Телефон
               </label>
               <input
                 type="text"
                 value={form.contact_phone}
                 onChange={(e) => handleChange('contact_phone', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
               />
             </div>
             <div>
-              <label className="flex items-center gap-2 text-sm text-[#a1a1aa] mb-2">
+              <label className="flex items-center gap-2 text-sm text-[#4A6578] mb-2">
                 <MapPin className="w-4 h-4" /> Адрес
               </label>
               <input
                 type="text"
                 value={form.contact_address}
                 onChange={(e) => handleChange('contact_address', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
               />
             </div>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
             <div>
-              <label className="flex items-center gap-2 text-sm text-[#a1a1aa] mb-2">
+              <label className="flex items-center gap-2 text-sm text-[#4A6578] mb-2">
                 <Instagram className="w-4 h-4" /> Instagram
               </label>
               <input
                 type="url"
                 value={form.social_instagram}
                 onChange={(e) => handleChange('social_instagram', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
                 placeholder="https://instagram.com/..."
               />
             </div>
             <div>
-              <label className="flex items-center gap-2 text-sm text-[#a1a1aa] mb-2">
+              <label className="flex items-center gap-2 text-sm text-[#4A6578] mb-2">
                 <Youtube className="w-4 h-4" /> YouTube
               </label>
               <input
                 type="url"
                 value={form.social_youtube}
                 onChange={(e) => handleChange('social_youtube', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
                 placeholder="https://youtube.com/..."
               />
             </div>
             <div>
-              <label className="flex items-center gap-2 text-sm text-[#a1a1aa] mb-2">
+              <label className="flex items-center gap-2 text-sm text-[#4A6578] mb-2">
                 <Music2 className="w-4 h-4" /> TikTok
               </label>
               <input
                 type="url"
                 value={form.social_tiktok}
                 onChange={(e) => handleChange('social_tiktok', e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-[#13131f] border border-[#27273a] focus:border-[#6366f1] focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"
                 placeholder="https://tiktok.com/@..."
               />
             </div>

@@ -1,107 +1,100 @@
-import { Radio, Users, Headphones, Tag, TrendingUp, Calendar } from 'lucide-react';
+import { Calendar, Users, Headphones, Tag, Plus } from 'lucide-react';
 import { useData } from '@/context/DataContext';
+
+const COLORS = {
+  bg: '#B6E0EE',
+  neppy: '#28B9D0',
+  purple: '#685096',
+  green: '#AFCB31',
+  white: '#FFFFFF',
+  text: '#1A2B3C',
+  textMuted: '#4A6578',
+};
 
 export function DashboardPage() {
   const { shows, hosts, podcasts, categories } = useData();
 
   const stats = [
-    { label: 'Передач', value: shows.length, icon: Calendar, color: 'from-[#6366f1] to-[#8b5cf6]' },
-    { label: 'Ведущих', value: hosts.length, icon: Users, color: 'from-[#22c55e] to-[#14b8a6]' },
-    { label: 'Подкастов', value: podcasts.length, icon: Headphones, color: 'from-[#f59e0b] to-[#f97316]' },
-    { label: 'Категорий', value: categories.length, icon: Tag, color: 'from-[#ef4444] to-[#ec4899]' },
+    { label: 'Передач', value: shows.length, icon: Calendar, color: '#8B5CF6' },
+    { label: 'Ведущих', value: hosts.length, icon: Users, color: '#22C55E' },
+    { label: 'Подкастов', value: podcasts.length, icon: Headphones, color: '#F97316' },
+    { label: 'Категорий', value: categories.length, icon: Tag, color: '#EC4899' },
   ];
 
-  const liveShows = shows.filter(s => s.is_live);
-
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Дашборд</h1>
+    <div>
+      <h1 className="text-3xl font-bold mb-8" style={{ color: COLORS.text }}>Дашборд</h1>
 
       {/* Stats Grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className="glass-card rounded-2xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center`}>
-                <stat.icon className="w-5 h-5 text-white" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {stats.map((stat, i) => {
+          const Icon = stat.icon;
+          return (
+            <div key={i} className="rounded-2xl p-6 shadow-lg" style={{ background: COLORS.white, border: `1px solid ${COLORS.neppy}20` }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: stat.color + '20' }}>
+                  <Icon className="w-6 h-6" style={{ color: stat.color }} />
+                </div>
+                <span className="text-3xl font-bold" style={{ color: COLORS.text }}>{stat.value}</span>
               </div>
-              <span className="text-2xl font-bold">{stat.value}</span>
+              <p className="text-sm" style={{ color: COLORS.textMuted }}>{stat.label}</p>
             </div>
-            <p className="text-sm text-[#71717a]">{stat.label}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Quick Actions */}
-      <div className="glass-card rounded-2xl p-6">
-        <h2 className="text-lg font-bold mb-4">Быстрые действия</h2>
-        <div className="grid sm:grid-cols-3 gap-3">
-          <button onClick={() => window.location.hash = '/admin/shows'} className="flex items-center gap-3 p-4 rounded-xl bg-[#13131f] border border-[#27273a] hover:border-[#6366f1]/50 transition-colors text-left">
-            <Calendar className="w-5 h-5 text-[#6366f1]" />
-            <span>Добавить передачу</span>
+      <div className="rounded-2xl p-6 shadow-lg mb-8" style={{ background: COLORS.white, border: `1px solid ${COLORS.neppy}20` }}>
+        <h2 className="text-xl font-bold mb-4" style={{ color: COLORS.text }}>Быстрые действия</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button className="p-4 rounded-xl transition-all hover:scale-105" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})`, color: COLORS.white }}>
+            <div className="flex items-center gap-3">
+              <Calendar className="w-5 h-5" />
+              <span className="font-bold">Добавить передачу</span>
+            </div>
           </button>
-          <button onClick={() => window.location.hash = '/admin/hosts'} className="flex items-center gap-3 p-4 rounded-xl bg-[#13131f] border border-[#27273a] hover:border-[#22c55e]/50 transition-colors text-left">
-            <Users className="w-5 h-5 text-[#22c55e]" />
-            <span>Добавить ведущего</span>
+          <button className="p-4 rounded-xl transition-all hover:scale-105" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})`, color: COLORS.white }}>
+            <div className="flex items-center gap-3">
+              <Users className="w-5 h-5" />
+              <span className="font-bold">Добавить ведущего</span>
+            </div>
           </button>
-          <button onClick={() => window.location.hash = '/admin/podcasts'} className="flex items-center gap-3 p-4 rounded-xl bg-[#13131f] border border-[#27273a] hover:border-[#f59e0b]/50 transition-colors text-left">
-            <Headphones className="w-5 h-5 text-[#f59e0b]" />
-            <span>Добавить подкаст</span>
+          <button className="p-4 rounded-xl transition-all hover:scale-105" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})`, color: COLORS.white }}>
+            <div className="flex items-center gap-3">
+              <Headphones className="w-5 h-5" />
+              <span className="font-bold">Добавить подкаст</span>
+            </div>
           </button>
         </div>
       </div>
 
-      {/* Live Shows */}
-      {liveShows.length > 0 && (
-        <div className="glass-card rounded-2xl p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Radio className="w-5 h-5 text-[#ef4444]" />
-            <h2 className="text-lg font-bold">Сейчас в эфире</h2>
-          </div>
+      {/* Recent Shows & Popular Podcasts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-2xl p-6 shadow-lg" style={{ background: COLORS.white, border: `1px solid ${COLORS.neppy}20` }}>
+          <h2 className="text-xl font-bold mb-4" style={{ color: COLORS.text }}>Последние передачи</h2>
           <div className="space-y-3">
-            {liveShows.map(show => (
-              <div key={show.id} className="flex items-center justify-between p-3 rounded-xl bg-[#ef4444]/10 border border-[#ef4444]/20">
+            {shows.slice(0, 5).map((show) => (
+              <div key={show.id} className="flex items-center justify-between p-3 rounded-xl" style={{ background: COLORS.bg + '40' }}>
                 <div>
-                  <span className="font-medium">{show.title}</span>
-                  <span className="text-sm text-[#71717a] ml-2">{show.host}</span>
+                  <h3 className="font-bold" style={{ color: COLORS.text }}>{show.title}</h3>
+                  <p className="text-sm" style={{ color: COLORS.textMuted }}>{show.time} • {show.day_of_week}</p>
                 </div>
-                <span className="px-2 py-1 rounded-full bg-[#ef4444]/20 text-[#ef4444] text-xs font-bold">LIVE</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Recent Items */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="glass-card rounded-2xl p-6">
-          <h2 className="text-lg font-bold mb-4">Последние передачи</h2>
-          <div className="space-y-2">
-            {shows.slice(0, 5).map(show => (
-              <div key={show.id} className="flex items-center justify-between py-2 border-b border-[#27273a] last:border-0">
-                <div>
-                  <p className="font-medium">{show.title}</p>
-                  <p className="text-xs text-[#71717a]">{show.time} • {show.day_of_week}</p>
-                </div>
-                <span className="text-xs text-[#6366f1]">{show.category}</span>
+                <span className="text-sm px-3 py-1 rounded-full" style={{ background: COLORS.neppy + '20', color: COLORS.purple }}>{show.category}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="glass-card rounded-2xl p-6">
-          <h2 className="text-lg font-bold mb-4">Популярные подкасты</h2>
-          <div className="space-y-2">
-            {podcasts.sort((a, b) => b.likes - a.likes).slice(0, 5).map(podcast => (
-              <div key={podcast.id} className="flex items-center justify-between py-2 border-b border-[#27273a] last:border-0">
+        <div className="rounded-2xl p-6 shadow-lg" style={{ background: COLORS.white, border: `1px solid ${COLORS.neppy}20` }}>
+          <h2 className="text-xl font-bold mb-4" style={{ color: COLORS.text }}>Популярные подкасты</h2>
+          <div className="space-y-3">
+            {podcasts.slice(0, 5).map((podcast) => (
+              <div key={podcast.id} className="flex items-center justify-between p-3 rounded-xl" style={{ background: COLORS.bg + '40' }}>
                 <div>
-                  <p className="font-medium">{podcast.title}</p>
-                  <p className="text-xs text-[#71717a]">{podcast.episodes} выпусков</p>
+                  <h3 className="font-bold" style={{ color: COLORS.text }}>{podcast.title}</h3>
+                  <p className="text-sm" style={{ color: COLORS.textMuted }}>{podcast.episodes} выпусков</p>
                 </div>
-                <div className="flex items-center gap-1 text-xs text-[#ef4444]">
-                  <TrendingUp className="w-3 h-3" />
-                  {podcast.likes}
-                </div>
+                <span className="text-sm" style={{ color: COLORS.green }}> {podcast.likes}</span>
               </div>
             ))}
           </div>

@@ -1,155 +1,123 @@
-import { Radio, Users, Headphones, Award, MapPin, Mail, Phone, Instagram, Youtube, Music2, Lock } from 'lucide-react';
+import { Radio, Users, Globe, Award, Sparkles, Heart, Star } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 
-const features = [
-  { title: 'Единая платформа', description: 'Объединяем все отели сети в одно информационное пространство' },
-  { title: 'Живой контент', description: 'Передачи создаются самими сотрудниками — аутентично и искренне' },
-  { title: 'Вовлечение гостей', description: 'Гости слышат истории персонала и погружаются в атмосферу отеля' },
-  { title: 'Развитие команды', description: 'Творческая платформа для сотрудников по всей стране' },
-];
-
-const stats = [
-  { value: '4000+', label: 'Сотрудников', icon: Users },
-  { value: '24/7', label: 'Вещание', icon: Radio },
-  { value: '150+', label: 'Передач', icon: Headphones },
-  { value: '50+', label: 'Ведущих', icon: Award },
-];
+const COLORS = {
+  bg: '#B6E0EE',
+  neppy: '#28B9D0',
+  purple: '#685096',
+  green: '#AFCB31',
+  white: '#FFFFFF',
+  text: '#1A2B3C',
+  textMuted: '#4A6578',
+};
 
 export function AboutSection() {
-  const { settings } = useData();
+  const { settings, shows, hosts, podcasts } = useData();
 
   return (
-    <div className="space-y-8">
-      {/* Hero */}
-      <section className="text-center py-8">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center mx-auto mb-6 animate-pulse-glow">
-          <Radio className="w-10 h-10 text-white" />
-        </div>
-        <h1 className="text-3xl font-bold mb-3">{settings.site_name}</h1>
-        <p className="text-[#a1a1aa] max-w-md mx-auto">
-          {settings.site_tagline}
-        </p>
-      </section>
-
-      {/* Stats */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} className="glass-card rounded-2xl p-4 text-center">
-              <Icon className="w-6 h-6 text-[#6366f1] mx-auto mb-2" />
-              <div className="text-2xl font-bold gradient-text">{stat.value}</div>
-              <div className="text-xs text-[#71717a]">{stat.label}</div>
-            </div>
-          );
-        })}
-      </section>
-
-      {/* Mission */}
-      <section className="glass-card rounded-2xl p-6">
-        <h2 className="text-xl font-bold mb-4">Наша миссия</h2>
-        <p className="text-[#a1a1aa] leading-relaxed mb-6">
-          {settings.about_text}
-        </p>
-        
-        <div className="grid sm:grid-cols-2 gap-4">
-          {features.map((feature, index) => (
-            <div key={index} className="flex gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#6366f1]/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-[#6366f1] font-bold text-sm">{index + 1}</span>
-              </div>
-              <div>
-                <h3 className="font-medium mb-1">{feature.title}</h3>
-                <p className="text-sm text-[#71717a]">{feature.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* How to Listen */}
-      <section>
-        <h2 className="text-xl font-bold mb-4">Как слушать</h2>
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div className="show-card text-center">
-            <div className="w-12 h-12 rounded-xl bg-[#6366f1]/20 flex items-center justify-center mx-auto mb-3">
-              <Radio className="w-6 h-6 text-[#6366f1]" />
-            </div>
-            <h3 className="font-medium mb-1">В номере</h3>
-            <p className="text-sm text-[#71717a]">Фоновое радио в отельном ТВ</p>
-          </div>
-          <div className="show-card text-center">
-            <div className="w-12 h-12 rounded-xl bg-[#8b5cf6]/20 flex items-center justify-center mx-auto mb-3">
-              <Headphones className="w-6 h-6 text-[#8b5cf6]" />
-            </div>
-            <h3 className="font-medium mb-1">На сайте</h3>
-            <p className="text-sm text-[#71717a]">Онлайн-трансляция 24/7</p>
-          </div>
-          <div className="show-card text-center">
-            <div className="w-12 h-12 rounded-xl bg-[#06b6d4]/20 flex items-center justify-center mx-auto mb-3">
-              <Phone className="w-6 h-6 text-[#06b6d4]" />
-            </div>
-            <h3 className="font-medium mb-1">В приложении</h3>
-            <p className="text-sm text-[#71717a]">Скоро на iOS и Android</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Contact */}
-      <section className="glass-card rounded-2xl p-6">
-        <h2 className="text-xl font-bold mb-4">Контакты</h2>
-        
-        <div className="space-y-4 mb-6">
-          <div className="flex items-center gap-3">
-            <Mail className="w-5 h-5 text-[#6366f1]" />
-            <span className="text-[#a1a1aa]">{settings.contact_email}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Phone className="w-5 h-5 text-[#6366f1]" />
-            <span className="text-[#a1a1aa]">{settings.contact_phone}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <MapPin className="w-5 h-5 text-[#6366f1]" />
-            <span className="text-[#a1a1aa]">{settings.contact_address}</span>
-          </div>
-        </div>
-
-        <div className="flex gap-3">
-          <a href={settings.social_instagram} className="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl bg-[#13131f] border border-[#27273a] hover:border-[#6366f1]/50 transition-colors">
-            <Instagram className="w-5 h-5" />
-            <span className="text-sm hidden sm:inline">Instagram</span>
-          </a>
-          <a href={settings.social_youtube} className="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl bg-[#13131f] border border-[#27273a] hover:border-[#6366f1]/50 transition-colors">
-            <Youtube className="w-5 h-5" />
-            <span className="text-sm hidden sm:inline">YouTube</span>
-          </a>
-          <a href={settings.social_tiktok} className="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl bg-[#13131f] border border-[#27273a] hover:border-[#6366f1]/50 transition-colors">
-            <Music2 className="w-5 h-5" />
-            <span className="text-sm hidden sm:inline">TikTok</span>
-          </a>
-        </div>
-      </section>
-
-      {/* Admin Link */}
-      <div className="text-center">
-        <a
-          href="#/admin"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#13131f] border border-[#27273a] hover:border-[#6366f1]/50 transition-colors text-sm text-[#71717a] hover:text-white"
-        >
-          <Lock className="w-4 h-4" />
-          Вход для администратора
-        </a>
+    <div className="relative overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8 -mt-20" style={{ background: COLORS.bg }}>
+      {/* Background Shapes */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute rounded-full opacity-30 animate-float" style={{ width: '400px', height: '400px', background: COLORS.neppy, top: '-10%', left: '-10%', filter: 'blur(80px)' }} />
+        <div className="absolute rounded-full opacity-20 animate-float" style={{ width: '300px', height: '300px', background: COLORS.purple, bottom: '10%', right: '-5%', animationDelay: '5s', filter: 'blur(80px)' }} />
+        <div className="absolute rounded-full opacity-25 animate-float" style={{ width: '200px', height: '200px', background: COLORS.green, top: '50%', left: '40%', animationDelay: '10s', filter: 'blur(60px)' }} />
       </div>
 
-      {/* Footer */}
-      <footer className="text-center pt-8 border-t border-[#27273a]">
-        <p className="text-sm text-[#71717a]">
-          © 2026 {settings.site_name}. Все права защищены.
-        </p>
-        <p className="text-xs text-[#27273a] mt-2">
-          {settings.hero_title} • {settings.hero_subtitle}
-        </p>
-      </footer>
+      <div className="relative z-10 pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          
+          {/* HERO-БЛОК - ИЗ НАСТРОЕК АДМИНКИ */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full shadow-sm mb-6 animate-fade-in-up" style={{ background: COLORS.white + 'CC' }}>
+              <Sparkles className="w-4 h-4" style={{ color: COLORS.purple }} />
+              <span className="text-sm font-bold" style={{ color: COLORS.text }}>
+                {settings.hero_title || 'Голос вашего отеля'}
+              </span>
+            </div>
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold mb-6 leading-tight" style={{ color: COLORS.text }}>
+              {settings.hero_subtitle || 'Звуки вашего космоса'} <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r" style={{ backgroundImage: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})` }}>
+                {settings.hero_description || 'Первый в России корпоративный медиа-канал'}
+              </span>
+            </h1>
+            <p className="text-xl max-w-2xl mx-auto" style={{ color: COLORS.textMuted }}>
+              В индустрии гостеприимства. Объединяем 4000+ сотрудников и 2.5M гостей по всему миру.
+            </p>
+          </div>
+
+          {/* Stats */}
+          <div className="flex flex-wrap justify-center gap-4 mb-16">
+            {['4000+ сотрудников', '2.5M гостей', '24/7 вещание'].map((stat, i) => (
+              <div key={i} className="rounded-2xl px-8 py-4 shadow-lg border-2 animate-fade-in-up" style={{ 
+                background: COLORS.white, 
+                borderColor: COLORS.neppy + '40',
+                animationDelay: `${i * 100}ms` 
+              }}>
+                <span className="text-2xl font-bold" style={{ color: COLORS.text }}>{stat}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* About Content */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            <div className="rounded-3xl p-8 shadow-xl border-2" style={{ background: COLORS.white, borderColor: 'transparent' }}>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-white" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})` }}>
+                <Radio className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-bold mb-2" style={{ color: COLORS.text }}>24/7 Вещание</h3>
+              <p style={{ color: COLORS.textMuted }}>Непрерывное вещание профессионального контента для гостей и сотрудников отелей</p>
+            </div>
+
+            <div className="rounded-3xl p-8 shadow-xl border-2" style={{ background: COLORS.white, borderColor: 'transparent' }}>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-white" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})` }}>
+                <Users className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-bold mb-2" style={{ color: COLORS.text }}>4000+ Сотрудников</h3>
+              <p style={{ color: COLORS.textMuted }}>Объединяем команды лучших отелей по всей России и миру</p>
+            </div>
+
+            <div className="rounded-3xl p-8 shadow-xl border-2" style={{ background: COLORS.white, borderColor: 'transparent' }}>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-white" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})` }}>
+                <Globe className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-bold mb-2" style={{ color: COLORS.text }}>2.5M Гостей</h3>
+              <p style={{ color: COLORS.textMuted }}>Ежегодный охват гостей сети отелей Cosmos</p>
+            </div>
+
+            <div className="rounded-3xl p-8 shadow-xl border-2" style={{ background: COLORS.white, borderColor: 'transparent' }}>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-white" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})` }}>
+                <Award className="w-8 h-8" />
+              </div>
+              <h3 className="text-2xl font-bold mb-2" style={{ color: COLORS.text }}>Премиум Контент</h3>
+              <p style={{ color: COLORS.textMuted }}>Эксклюзивные подкасты, интервью и музыкальные программы</p>
+            </div>
+          </div>
+
+          {/* CTA Block */}
+          <div className="rounded-3xl p-8 shadow-xl border-2 text-center" style={{ background: COLORS.white, borderColor: 'transparent' }}>
+            <h3 className="text-2xl font-bold mb-4" style={{ color: COLORS.text }}>Присоединяйтесь к нам!</h3>
+            <p className="mb-6" style={{ color: COLORS.textMuted }}>Слушайте Cosmos FM в лучших отелях сети</p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <div className="px-6 py-3 rounded-2xl text-white font-bold" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})` }}>
+                Москва
+              </div>
+              <div className="px-6 py-3 rounded-2xl text-white font-bold" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})` }}>
+                Санкт-Петербург
+              </div>
+              <div className="px-6 py-3 rounded-2xl text-white font-bold" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})` }}>
+                Сочи
+              </div>
+            </div>
+          </div>
+
+          {/* Footer info */}
+          <div className="mt-12 text-center">
+            <p className="flex items-center justify-center gap-2 text-sm" style={{ color: COLORS.textMuted }}>
+              Сделано с <Heart className="w-4 h-4" style={{ color: '#EF4444' }} /> для сети отелей Cosmos
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

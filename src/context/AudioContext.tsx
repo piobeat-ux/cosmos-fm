@@ -1,247 +1,179 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 const AudioContext = createContext(undefined);
 
 export function AudioProvider({ children }) {
-  const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(null);
-  const [volume, setVolumeState] = useState(80);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isLiveStream, setIsLiveStream] = useState(false);
-  const [error, setError] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [error, setError] = useState(null);
   const audioRef = useRef(null);
-  const currentUrlRef = useRef(null);
 
+  // Инициализация audio элемента
   useEffect(() => {
-    try {
+    if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.preload = 'none';
-      audioRef.current.volume = volume / 100;
-      
-      const audio = audioRef.current;
-
-      const handleTimeUpdate = () => {
-        if (audio.duration && isFinite(audio.duration)) {
-          setProgress((audio.currentTime / audio.duration) * 100);
-        }
-      };
-
-      const handleLoadedMetadata = () => {
-        setDuration(audio.duration);
-        setError(null);
-        setIsLoading(false);
-      };
-
-      const handleEnded = () => {
-        if (!isLiveStream) {
-          setIsPlaying(false);
-          setProgress(0);
-        }
-      };
-
-      const handleError = (e) => {
-        console.error('Audio error:', e);
-        setIsLoading(false);
-        setIsPlaying(false);
-        
-        const mediaError = e.target?.error;
-        let errorMsg = 'Ошибка воспроизведения';
-        let errorType = 'unknown';
-        
-        if (mediaError) {
-          switch (mediaError.code) {
-            case 1: 
-              errorMsg = 'Воспроизведение прервано'; 
-              errorType = 'aborted';
-              break;
-            case 2: 
-              errorMsg = 'Сетевая ошибка: ссылка недоступна'; 
-              errorType = 'network';
-              break;
-            case 3: 
-              errorMsg = 'Ошибка декодирования аудиофайла'; 
-              errorType = 'decode';
-              break;
-            case 4: 
-              errorMsg = 'Формат не поддерживается. Попробуйте MP3 или AAC (HTTPS)'; 
-              errorType = 'format';
-              break;
-          }
-        }
-        setError(errorMsg);
-      };
-
-      const handleWaiting = () => setIsLoading(true);
-      const handlePlaying = () => {
-        setIsLoading(false);
-        setError(null);
-        setIsPlaying(true);
-      };
-      const handleCanPlay = () => setIsLoading(false);
-
-      audio.addEventListener('timeupdate', handleTimeUpdate);
-      audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.addEventListener('ended', handleEnded);
-      audio.addEventListener('error', handleError);
-      audio.addEventListener('waiting', handleWaiting);
-      audio.addEventListener('playing', handlePlaying);
-      audio.addEventListener('canplay', handleCanPlay);
-
-      return () => {
-        audio.pause();
-        audio.src = '';
-      };
-    } catch (err) {
-      console.error('Failed to init audio:', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume / 100;
-  }, [volume]);
-
-  const checkUrl = useCallback((url) => {
-    if (!url) return { valid: false, reason: 'URL не указан' };
-    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http:')) {
-      return { valid: false, reason: 'HTTP поток заблокирован на HTTPS сайте. Используйте HTTPS URL.' };
-    }
-    return { valid: true };
-  }, []);
-
-  const playLiveStream = useCallback((url, title = 'Live Stream') => {
-    if (!audioRef.current) {
-      setError('Аудио не инициализировано');
-      return;
-    }
-    
-    const check = checkUrl(url);
-    if (!check.valid) {
-      setError(check.reason);
-      return;
     }
     
     const audio = audioRef.current;
-    setIsLiveStream(true);
-    setError(null);
-    setIsLoading(true);
     
-    if (currentUrlRef.current === url && isPlaying) {
-      return;
-    }
-    
-    audio.pause();
-    audio.src = '';
-    currentUrlRef.current = url;
-    audio.src = url;
-    audio.load();
-    
-    const playPromise = audio.play();
-    if (playPromise) {
-      playPromise
-        .then(() => {
-          console.log('Stream playing:', title);
-          setIsPlaying(true);
-          setCurrentTrack({ id: 'live-' + Date.now(), title, isLive: true, type: 'stream', audio_url: url });
-        })
-        .catch(err => {
-          console.error('Play failed:', err);
-          setIsLoading(false);
-          if (err.name === 'NotAllowedError') {
-            setError('Нажмите кнопку Play для запуска');
-          } else {
-            setError('Ошибка: ' + err.message);
-          }
-        });
-    }
-  }, [checkUrl, isPlaying]);
+    const handleCanPlay = () => {
+      console.log('✅ Audio can play');
+      setIsLoading(false);
+      setError(null);
+    };
+
+    const handleWaiting = () => {
+      console.log('⏳ Audio waiting');
+      setIsLoading(true);
+    };
+
+    const handlePlaying = () => {
+      console.log('▶️ Audio playing');
+      setIsLoading(false);
+      setIsPlaying(true);
+    };
+
+    const handlePause = () => {
+      console.log('⏸️ Audio paused');
+      setIsPlaying(false);
+    };
+
+    const handleEnded = () => {
+      console.log('️ Audio ended');
+      setIsPlaying(false);
+      setIsLoading(false);
+    };
+
+    const handleError = (e) => {
+      console.error('❌ Audio error:', e);
+      setIsLoading(false);
+      setIsPlaying(false);
+      setError('Ошибка воспроизведения');
+    };
+
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('waiting', handleWaiting);
+    audio.addEventListener('playing', handlePlaying);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+
+    return () => {
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('waiting', handleWaiting);
+      audio.removeEventListener('playing', handlePlaying);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
+    };
+  }, []);
 
   const playTrack = useCallback((track) => {
-    if (!audioRef.current || !track.audio_url) {
-      setError('URL трека не указан');
-      return;
-    }
+    console.log('🎵 Playing track:', track);
     
-    const check = checkUrl(track.audio_url);
-    if (!check.valid) {
-      setError(check.reason);
-      return;
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
     }
     
     const audio = audioRef.current;
-    setIsLiveStream(!!track.isLive);
-    setError(null);
-    setIsLoading(true);
     
-    if (currentUrlRef.current === track.audio_url && isPlaying) {
+    setIsLoading(true);
+    setError(null);
+    
+    if (!track?.audio_url) {
+      console.error('❌ No audio URL');
+      setIsLoading(false);
+      setError('Нет аудио потока');
       return;
     }
-    
-    audio.pause();
-    audio.src = '';
-    currentUrlRef.current = track.audio_url;
-    audio.src = track.audio_url;
-    audio.load();
-    
-    const playPromise = audio.play();
-    if (playPromise) {
-      playPromise
-        .then(() => {
-          console.log('Track playing:', track.title);
-          setIsPlaying(true);
-          setCurrentTrack(track);
-        })
-        .catch(err => {
-          console.error('Play failed:', err);
-          setIsLoading(false);
-          setError('Ошибка: ' + err.message);
-        });
+
+    // Если тот же трек - просто возобновляем
+    if (currentTrack?.id === track.id && audio.src) {
+      console.log('🔄 Resuming same track');
+      audio.play().then(() => {
+        setIsPlaying(true);
+      }).catch(err => {
+        console.error('❌ Resume failed:', err);
+        setIsLoading(false);
+      });
+      return;
     }
-  }, [checkUrl, isPlaying]);
+
+    // Новый трек - загружаем
+    try {
+      audio.pause();
+      audio.src = track.audio_url;
+      audio.load();
+      setCurrentTrack(track);
+      
+      audio.play().then(() => {
+        console.log('✅ Play started');
+      }).catch(err => {
+        console.error('❌ Play failed:', err);
+        setIsLoading(false);
+        setError('Не удалось воспроизвести');
+      });
+    } catch (err) {
+      console.error('❌ Play error:', err);
+      setIsLoading(false);
+      setError('Ошибка воспроизведения');
+    }
+  }, [currentTrack]);
+
+  const pauseTrack = useCallback(() => {
+    console.log('⏸️ Pausing track');
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, []);
 
   const togglePlay = useCallback(() => {
-    if (!audioRef.current || !currentTrack) return;
-    const audio = audioRef.current;
-    
+    console.log('🔄 Toggle play, current:', isPlaying);
     if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
-    } else {
-      setIsLoading(true);
-      const playPromise = audio.play();
-      if (playPromise) {
-        playPromise
-          .then(() => setIsPlaying(true))
-          .catch(err => {
-            setIsLoading(false);
-            setError('Ошибка: ' + err.message);
-          });
-      }
+      pauseTrack();
+    } else if (currentTrack) {
+      playTrack(currentTrack);
     }
-  }, [isPlaying, currentTrack]);
+  }, [isPlaying, currentTrack, playTrack, pauseTrack]);
 
-  const stop = useCallback(() => {
+  const playLiveStream = useCallback((streamUrl, title = 'Live Stream') => {
+    console.log('📡 Playing live stream:', streamUrl);
+    playTrack({
+      id: 'live',
+      title,
+      artist: 'Cosmos FM',
+      audio_url: streamUrl,
+      isLive: true,
+      type: 'live'
+    });
+  }, [playTrack]);
+
+  const stopTrack = useCallback(() => {
+    console.log('⏹️ Stopping track');
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = '';
-      currentUrlRef.current = null;
-      setIsPlaying(false);
       setCurrentTrack(null);
-      setIsLiveStream(false);
+      setIsPlaying(false);
+      setIsLoading(false);
       setError(null);
     }
   }, []);
 
-  const setVolume = useCallback((v) => setVolumeState(v), []);
-  const clearError = useCallback(() => setError(null), []);
-
   return (
     <AudioContext.Provider value={{
-      isPlaying, currentTrack, volume, progress, duration, 
-      isLiveStream, error, isLoading,
-      playLiveStream, playTrack, togglePlay, stop, setVolume, clearError,
+      currentTrack,
+      isPlaying,
+      isLoading,
+      error,
+      playTrack,
+      pauseTrack,
+      togglePlay,
+      playLiveStream,
+      stopTrack,
     }}>
       {children}
     </AudioContext.Provider>
@@ -249,7 +181,7 @@ export function AudioProvider({ children }) {
 }
 
 export function useAudio() {
-  const ctx = useContext(AudioContext);
-  if (!ctx) throw new Error('useAudio must be used within AudioProvider');
-  return ctx;
+  const context = useContext(AudioContext);
+  if (!context) throw new Error('useAudio must be used within AudioProvider');
+  return context;
 }

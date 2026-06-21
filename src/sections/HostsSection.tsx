@@ -1,57 +1,38 @@
-import { User } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 
 export function HostsSection() {
   const { hosts } = useData();
 
   return (
-    <section id="hosts" className="py-20">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-            <span className="gradient-text">Наши ведущие</span>
-          </h2>
-          <p className="text-lg text-[#71717a]">Профессионалы своего дела</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {hosts.length === 0 ? (
-            <div className="col-span-full text-center py-12 text-[#71717a]">
-              <User className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Пока нет ведущих</p>
-            </div>
-          ) : (
-            hosts.map(host => (
-              <div key={host.id} className="glass-card rounded-2xl p-6 hover:border-[#6366f1]/50 transition-all duration-300">
-                <div className="flex flex-col items-center text-center">
-                  {host.photo_url ? (
-                    <img 
-                      src={host.photo_url} 
-                      alt={host.name} 
-                      className="w-24 h-24 rounded-full object-cover border-2 border-[#27273a] mb-4"
-                    />
-                  ) : (
-                    <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${host.color || 'from-[#6366f1] to-[#8b5cf6]'} flex items-center justify-center text-white text-2xl font-bold mb-4`}>
-                      {host.initials || host.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                    </div>
-                  )}
-                  
-                  <h3 className="text-xl font-bold mb-1">{host.name}</h3>
-                  <p className="text-sm text-[#6366f1] mb-2">{host.role || 'Ведущий'}</p>
-                  
-                  {host.hotel && (
-                    <p className="text-xs text-[#71717a] mb-3">{host.hotel}</p>
-                  )}
-                  
-                  {host.bio && (
-                    <p className="text-sm text-[#a1a1aa] line-clamp-3">{host.bio}</p>
-                  )}
+    <div className="min-h-screen pt-32 pb-20 px-4 sm:px-6 lg:px-8" style={{ background: 'linear-gradient(135deg, #B8E8F7 0%, #E0F4F8 100%)' }}>
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-[#2D3748] mb-12 text-center">
+          Наши <span className="text-[#7C5FBF]">Ведущие</span>
+        </h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {hosts.map(host => (
+            <div key={host.id} className="bg-white rounded-3xl p-8 shadow-xl shadow-blue-100/50 hover:shadow-2xl transition-all hover:-translate-y-2 text-center relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-[#4DD0E1] to-[#7C5FBF]" />
+              <div className="relative z-10 mt-8">
+                {host.photo_url ? (
+                  <img src={host.photo_url} className="w-24 h-24 rounded-full border-4 border-white shadow-lg mx-auto mb-4 object-cover" />
+                ) : (
+                  <div className={`w-24 h-24 rounded-full border-4 border-white shadow-lg mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white ${host.color || 'bg-[#7C5FBF]'}`}>
+                    {host.initials || host.name.substring(0, 1)}
+                  </div>
+                )}
+                <h3 className="text-xl font-bold text-[#2D3748] mb-1">{host.name}</h3>
+                <p className="text-[#7C5FBF] font-semibold text-sm mb-4">{host.role}</p>
+                <div className="bg-[#E0F4F8] rounded-xl p-4 text-sm text-[#2D3748]">
+                  {host.bio}
                 </div>
               </div>
-            ))
-          )}
+            </div>
+          ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
