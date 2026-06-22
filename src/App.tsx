@@ -10,6 +10,12 @@ import { ScheduleSection } from '@/sections/ScheduleSection';
 import { HostsSection } from '@/sections/HostsSection';
 import { PodcastsSection } from '@/sections/PodcastsSection';
 import { AboutSection } from '@/sections/AboutSection';
+import { lazy, Suspense } from 'react';
+
+const LazyPodcastsSection = lazy(() => import('@/sections/PodcastsSection').then(m => ({ default: m.PodcastsSection })));
+const LazyHostsSection = lazy(() => import('@/sections/HostsSection').then(m => ({ default: m.HostsSection })));
+const LazyScheduleSection = lazy(() => import('@/sections/ScheduleSection').then(m => ({ default: m.ScheduleSection })));
+const LazyFAQSection = lazy(() => import('@/sections/FAQSection').then(m => ({ default: m.FAQSection })));
 import { FAQSection } from '@/sections/FAQSection';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { LoginPage } from '@/admin/pages/LoginPage';
@@ -56,11 +62,11 @@ function FrontLayout() {
   const renderContent = () => {
     switch (activeTab) {
       case 'home': return <HomeSection onTabChange={handleTabChange} />;
-      case 'schedule': return <ScheduleSection />;
-      case 'hosts': return <HostsSection />;
-      case 'podcasts': return <PodcastsSection />;
+      case 'schedule': return <Suspense fallback={<LoadingFallback />}><LazyScheduleSection /></Suspense>;
+      case 'hosts': return <Suspense fallback={<LoadingFallback />}><LazyHostsSection /></Suspense>;
+      case 'podcasts': return <Suspense fallback={<LoadingFallback />}><LazyPodcastsSection /></Suspense>;
       case 'about': return <AboutSection />;
-      case 'faq': return <FAQSection />;
+      case 'faq': return <Suspense fallback={<LoadingFallback />}><LazyFAQSection /></Suspense>;
       default: return <HomeSection onTabChange={handleTabChange} />;
     }
   };
@@ -145,6 +151,18 @@ function AdminRoutes() {
 }
 
 function App() {
+
+  const LoadingFallback = () => (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#B6E0EE' }}>
+      <div className="text-center">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse" style={{ background: 'linear-gradient(135deg, #28B9D0, #685096)' }}>
+          <span className="text-4xl"></span>
+        </div>
+        <p style={{ color: '#4A6578' }}>Загрузка...</p>
+      </div>
+    </div>
+  );
+
 
   
 

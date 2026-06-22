@@ -1,35 +1,44 @@
-import path from "path"
-import react from "@vitejs/plugin-react"
-import { defineConfig } from "vite"
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 export default defineConfig({
-  base: './',
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      '@': resolve(__dirname, './src'),
     },
   },
-  server: {
-    port: 5173,
-    host: true,
-  },
   build: {
-    outDir: 'dist',
-    sourcemap: false,
-    minify: 'esbuild',
     target: 'esnext',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
           supabase: ['@supabase/supabase-js'],
           icons: ['lucide-react'],
-        }
-      }
-    }
+        },
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+      },
+    },
+    chunkSizeWarningLimit: 500,
+    sourcemap: false,
+    cssCodeSplit: true,
+  },
+  server: {
+    port: 5173,
+    host: true,
   },
   optimizeDeps: {
     include: ['react', 'react-dom', '@supabase/supabase-js'],
-  }
+  },
 });
