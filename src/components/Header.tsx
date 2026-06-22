@@ -3,11 +3,11 @@ import { useData } from '@/context/DataContext';
 import { useState } from 'react';
 
 export function Header({ onTabChange, activeTab }) {
-  const { navigationLinks } = useData();
+  const { navigation } = useData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems = navigationLinks.length > 0
-    ? navigationLinks.map(link => ({
+  const navItems = navigation.length > 0
+    ? navigation.map(link => ({
         id: link.url.replace('#/', '').replace('#', '') || 'home',
         label: link.label,
       }))

@@ -25,7 +25,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [navigation, setNavigation] = useState([]);
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
@@ -34,18 +34,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const loadData = async () => {
       try {
-        console.log('🔄 Starting data load...');
-        
-        // Timeout after 10 seconds
         timeoutId = setTimeout(() => {
           if (!cancelled) {
-            console.error('⏱️ Data load timeout');
             setLoading(false);
-            setError('Превышено время загрузки. Проверьте подключение к интернету.');
+            setError('Превышено время загрузки');
           }
-        }, 10000);
+        }, 15000);
 
-        // Load all data in parallel
         const [
           showsRes,
           hostsRes,
@@ -60,40 +55,45 @@ export function DataProvider({ children }: { children: ReactNode }) {
           supabase.from('podcasts').select('*'),
           supabase.from('categories').select('*'),
           supabase.from('hotels').select('*'),
-          supabase.from('navigation').select('*').order('order'),
-          supabase.from('settings').select('*')
+          supabase.from('navigation_links').select('*'),
+          supabase.from('site_settings').select('*')
         ]);
 
         if (cancelled) return;
 
-        // Process results
-        setShows(showsRes.status === 'fulfilled' ? showsRes.value.data || [] : []);
-        setHosts(hostsRes.status === 'fulfilled' ? hostsRes.value.data || [] : []);
-        setPodcasts(podcastsRes.status === 'fulfilled' ? podcastsRes.value.data || [] : []);
-        setCategories(categoriesRes.status === 'fulfilled' ? categoriesRes.value.data || [] : []);
-        setHotels(hotelsRes.status === 'fulfilled' ? hotelsRes.value.data || [] : []);
-        setNavigation(navigationRes.status === 'fulfilled' ? navigationRes.value.data || [] : []);
+        const getData = (result: any) => {
+          if (result.status === 'fulfilled' && result.value.data) {
+            return result.value.data;
+          }
+          return [];
+        };
+
+        setShows(getData(showsRes));
+        setHosts(getData(hostsRes));
+        setPodcasts(getData(podcastsRes));
+        setCategories(getData(categoriesRes));
+        setHotels(getData(hotelsRes));
+        setNavigation(getData(navigationRes));
         
-        // Process settings into object
-        if (settingsRes.status === 'fulfilled' && settingsRes.value.data) {
-          const settingsObj = {};
-          settingsRes.value.data.forEach(item => {
+        const settingsData = getData(settingsRes);
+        const settingsObj: any = {};
+        settingsData.forEach((item: any) => {
+          if (item && item.key) {
             settingsObj[item.key] = item.value;
-          });
-          setSettings(settingsObj);
-        }
+          }
+        });
+        setSettings(settingsObj);
 
         clearTimeout(timeoutId);
         setLoading(false);
         setVersion(v => v + 1);
-        console.log('✅ Data loaded successfully');
         
-      } catch (err) {
-        console.error('❌ Error loading data:', err);
+      } catch (err: any) {
+        console.error('Error loading data:', err);
         if (!cancelled) {
           clearTimeout(timeoutId);
           setLoading(false);
-          setError('Ошибка загрузки данных');
+          setError(err.message || 'Ошибка загрузки');
         }
       }
     };

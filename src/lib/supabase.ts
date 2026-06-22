@@ -4,7 +4,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Supabase credentials missing. Check .env file');
+  console.error('Supabase credentials missing');
 }
 
 export const supabase = createClient(supabaseUrl || '', supabaseKey || '', {
@@ -24,13 +24,9 @@ export const supabase = createClient(supabaseUrl || '', supabaseKey || '', {
   },
 });
 
-// Admin authentication helpers
 export async function signInAdmin(email, password) {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     return { data, error };
   } catch (err) {
     return { data: null, error: err };
@@ -39,10 +35,7 @@ export async function signInAdmin(email, password) {
 
 export async function signUpAdmin(email, password) {
   try {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     return { data, error };
   } catch (err) {
     return { data: null, error: err };
@@ -58,7 +51,6 @@ export async function signOutAdmin() {
   }
 }
 
-// Data helpers
 export async function getShows() {
   try {
     const { data, error } = await supabase.from('shows').select('*').order('time');
@@ -106,7 +98,7 @@ export async function getHotels() {
 
 export async function getNavigation() {
   try {
-    const { data, error } = await supabase.from('navigation').select('*').order('order');
+    const { data, error } = await supabase.from('navigation_links').select('*');
     return { data: data || [], error };
   } catch (err) {
     return { data: [], error: err };
@@ -115,7 +107,7 @@ export async function getNavigation() {
 
 export async function getSettings() {
   try {
-    const { data, error } = await supabase.from('settings').select('*');
+    const { data, error } = await supabase.from('site_settings').select('*');
     return { data: data || [], error };
   } catch (err) {
     return { data: [], error: err };
@@ -125,7 +117,7 @@ export async function getSettings() {
 export async function updateSetting(key, value) {
   try {
     const { data, error } = await supabase
-      .from('settings')
+      .from('site_settings')
       .upsert({ key, value }, { onConflict: 'key' });
     return { data, error };
   } catch (err) {
@@ -136,7 +128,7 @@ export async function updateSetting(key, value) {
 export async function updateSettings(settings) {
   try {
     const updates = Object.entries(settings).map(([key, value]) =>
-      supabase.from('settings').upsert({ key, value }, { onConflict: 'key' })
+      supabase.from('site_settings').upsert({ key, value }, { onConflict: 'key' })
     );
     const results = await Promise.all(updates);
     return results;

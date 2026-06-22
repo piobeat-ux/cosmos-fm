@@ -42,7 +42,7 @@ function useHashRouter() {
 function FrontLayout() {
   const hash = useHashRouter();
   const [activeTab, setActiveTab] = useState('home');
-  const { loading } = useData();
+  const { loading, error } = useData();
 
   useEffect(() => {
     const h = window.location.hash;
