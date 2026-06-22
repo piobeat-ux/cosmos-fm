@@ -33,7 +33,6 @@ export function HomeSection({ onTabChange }) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-
   // Preload image function
   const preloadImage = (url) => {
     return new Promise((resolve, reject) => {
@@ -107,11 +106,7 @@ export function HomeSection({ onTabChange }) {
 
   const hasValidImage = localNeppyImage && localNeppyImage.trim() !== '' && !imageError && imageLoaded;
 
-  hasValidImage,
-    imageLoaded,
-    imageError,
-    loadAttempts
-  });
+  
 
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ background: COLORS.bg }}>
