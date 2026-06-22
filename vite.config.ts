@@ -9,9 +9,12 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
+  base: '/',
   build: {
     target: 'es2015',
     minify: 'esbuild',
+    outDir: 'dist',
+    assetsDir: 'assets',
     rollupOptions: {
       output: {
         manualChunks: {
