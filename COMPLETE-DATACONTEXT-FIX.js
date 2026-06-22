@@ -1,4 +1,8 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import fs from 'fs';
+
+console.log('🔧 === ПОЛНОЕ ИСПРАВЛЕНИЕ DATACONTEXT С CRUD ФУНКЦИЯМИ ===\n');
+
+const dataContextContent = `import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
 interface DataContextType {
@@ -68,7 +72,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabase.from('podcasts').select('*'),
         supabase.from('categories').select('*'),
         supabase.from('hotels').select('*'),
-        supabase.from('navigation_links').select('*').order('order_index', { ascending: true }),
+        supabase.from('navigation_links').select('*'),
         supabase.from('site_settings').select('*')
       ]);
 
@@ -275,3 +279,20 @@ export function useData() {
   if (!context) throw new Error('useData must be used within DataProvider');
   return context;
 }
+`;
+
+fs.writeFileSync('src/context/DataContext.tsx', dataContextContent);
+console.log('✅ DataContext.tsx полностью переписан с CRUD функциями');
+
+console.log('\n' + '='.repeat(70));
+console.log('✅ ГОТОВО!');
+console.log('='.repeat(70));
+console.log('\n📋 Что добавлено:');
+console.log('1. ✅ Все CRUD функции для каждой таблицы');
+console.log('2. ✅ navigationLinks алиас для navigation');
+console.log('3. ✅ Автоматическая перезагрузка данных после изменений');
+console.log('4. ✅ Обработка ошибок');
+console.log('\n🚀 ЗАПУСТИТЕ:');
+console.log('  npm run dev');
+console.log('\nТеперь админка должна работать полностью!');
+console.log('='.repeat(70));

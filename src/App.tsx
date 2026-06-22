@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { DataProvider, useData } from '@/context/DataContext';
 import { AudioProvider } from '@/context/AudioContext';
 import { Header } from '@/components/Header';
@@ -10,12 +10,6 @@ import { ScheduleSection } from '@/sections/ScheduleSection';
 import { HostsSection } from '@/sections/HostsSection';
 import { PodcastsSection } from '@/sections/PodcastsSection';
 import { AboutSection } from '@/sections/AboutSection';
-import { lazy, Suspense } from 'react';
-
-const LazyPodcastsSection = lazy(() => import('@/sections/PodcastsSection').then(m => ({ default: m.PodcastsSection })));
-const LazyHostsSection = lazy(() => import('@/sections/HostsSection').then(m => ({ default: m.HostsSection })));
-const LazyScheduleSection = lazy(() => import('@/sections/ScheduleSection').then(m => ({ default: m.ScheduleSection })));
-const LazyFAQSection = lazy(() => import('@/sections/FAQSection').then(m => ({ default: m.FAQSection })));
 import { FAQSection } from '@/sections/FAQSection';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { LoginPage } from '@/admin/pages/LoginPage';
@@ -29,6 +23,11 @@ import { HotelsPage } from '@/admin/pages/HotelsPage';
 import { NavigationPage } from '@/admin/pages/NavigationPage';
 import { SettingsPage } from '@/admin/pages/SettingsPage';
 
+const LazyPodcastsSection = lazy(() => import('@/sections/PodcastsSection').then(m => ({ default: m.PodcastsSection })));
+const LazyHostsSection = lazy(() => import('@/sections/HostsSection').then(m => ({ default: m.HostsSection })));
+const LazyScheduleSection = lazy(() => import('@/sections/ScheduleSection').then(m => ({ default: m.ScheduleSection })));
+const LazyFAQSection = lazy(() => import('@/sections/FAQSection').then(m => ({ default: m.FAQSection })));
+
 function useHashRouter() {
   const [hash, setHash] = useState(window.location.hash);
   useEffect(() => {
@@ -38,6 +37,17 @@ function useHashRouter() {
   }, []);
   return hash;
 }
+
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center" style={{ background: '#B6E0EE' }}>
+    <div className="text-center">
+      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse" style={{ background: 'linear-gradient(135deg, #28B9D0, #685096)' }}>
+        <span className="text-4xl"></span>
+      </div>
+      <p style={{ color: '#4A6578' }}>Загрузка...</p>
+    </div>
+  </div>
+);
 
 function FrontLayout() {
   const hash = useHashRouter();
@@ -76,7 +86,7 @@ function FrontLayout() {
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#B6E0EE' }}>
         <div className="text-center">
           <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg, #28B9D0, #685096)' }}>
-            <span className="text-4xl">📻</span>
+            <span className="text-4xl"></span>
           </div>
           <p className="text-lg font-bold" style={{ color: '#1A2B3C' }}>Cosmos FM</p>
           <p className="text-sm mt-2" style={{ color: '#4A6578' }}>Загрузка...</p>
@@ -94,7 +104,7 @@ function FrontLayout() {
           </div>
           <p className="text-lg font-bold mb-2" style={{ color: '#1A2B3C' }}>Ошибка загрузки</p>
           <p className="text-sm mb-4" style={{ color: '#4A6578' }}>{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="px-6 py-3 rounded-xl text-white font-bold"
             style={{ background: 'linear-gradient(135deg, #28B9D0, #685096)' }}
@@ -142,11 +152,20 @@ function AdminRoutes() {
     else setAdminPage('dashboard');
   }, [hash]);
 
-  const handleLogin = () => { localStorage.setItem('cosmos_fm_admin', 'true'); setIsLoggedIn(true); };
-  const handleLogout = () => { localStorage.removeItem('cosmos_fm_admin'); setIsLoggedIn(false); window.location.hash = ''; };
-  const navigateTo = (page) => { 
-    setAdminPage(page); 
-    window.location.hash = '#/admin' + (page === 'dashboard' ? '' : '/' + page); 
+  const handleLogin = () => {
+    localStorage.setItem('cosmos_fm_admin', 'true');
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('cosmos_fm_admin');
+    setIsLoggedIn(false);
+    window.location.hash = '';
+  };
+
+  const navigateTo = (page) => {
+    setAdminPage(page);
+    window.location.hash = '#/admin' + (page === 'dashboard' ? '' : '/' + page);
   };
 
   if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
@@ -173,29 +192,10 @@ function AdminRoutes() {
 }
 
 function App() {
-
-  const LoadingFallback = () => (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#B6E0EE' }}>
-      <div className="text-center">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse" style={{ background: 'linear-gradient(135deg, #28B9D0, #685096)' }}>
-          <span className="text-4xl"></span>
-        </div>
-        <p style={{ color: '#4A6578' }}>Загрузка...</p>
-      </div>
-    </div>
-  );
-
-
-  
-
   const hash = useHashRouter();
   const isAdmin = hash.startsWith('#/admin');
 
   return (
-    
-      
-      
-
     <AudioProvider>
       <DataProvider>
         {isAdmin ? <AdminRoutes /> : <FrontLayout />}
