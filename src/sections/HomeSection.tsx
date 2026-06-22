@@ -107,8 +107,7 @@ export function HomeSection({ onTabChange }) {
 
   const hasValidImage = localNeppyImage && localNeppyImage.trim() !== '' && !imageError && imageLoaded;
 
-  ,
-    hasValidImage,
+  hasValidImage,
     imageLoaded,
     imageError,
     loadAttempts
