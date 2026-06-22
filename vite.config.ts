@@ -10,14 +10,8 @@ export default defineConfig({
     },
   },
   build: {
-    target: 'esnext',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
+    target: 'es2015',
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -25,12 +19,9 @@ export default defineConfig({
           supabase: ['@supabase/supabase-js'],
           icons: ['lucide-react'],
         },
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 1000,
     sourcemap: false,
     cssCodeSplit: true,
   },
@@ -39,6 +30,6 @@ export default defineConfig({
     host: true,
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', '@supabase/supabase-js'],
+    include: ['react', 'react-dom', '@supabase/supabase-js', 'lucide-react'],
   },
 });
