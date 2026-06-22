@@ -1,4 +1,8 @@
-import { useState, useEffect } from 'react';
+import fs from 'fs';
+
+console.log('🔧 Полное восстановление HomeSection.tsx...\n');
+
+const cleanHomeSection = `import { useState, useEffect } from 'react';
 import { Radio, Music, Mic, Play, Pause, Loader2 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { useAudio } from '@/context/AudioContext';
@@ -331,7 +335,7 @@ export function HomeSection({ onTabChange }) {
         </div>
       </div>
 
-      <style>{`
+      <style>{\`
         @keyframes bounceCharacter {
           0%, 100% { transform: translateY(0) scale(1); }
           50% { transform: translateY(-20px) scale(1.03); }
@@ -366,7 +370,18 @@ export function HomeSection({ onTabChange }) {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-      `}</style>
+      \`}</style>
     </div>
   );
 }
+`;
+
+fs.writeFileSync('src/sections/HomeSection.tsx', cleanHomeSection);
+console.log('✅ HomeSection.tsx полностью восстановлен');
+console.log('✅ Удалены все console.log');
+console.log('✅ Добавлена мобильная оптимизация');
+console.log('\nЗапустите:');
+console.log('  npm run build');
+console.log('  git add .');
+console.log('  git commit -m "fix: clean HomeSection without console.log"');
+console.log('  git push origin main');
