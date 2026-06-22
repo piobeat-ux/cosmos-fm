@@ -15,6 +15,8 @@ export default defineConfig({
     minify: 'esbuild',
     outDir: 'dist',
     assetsDir: 'assets',
+    sourcemap: false,
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -25,8 +27,6 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 1000,
-    sourcemap: false,
-    cssCodeSplit: true,
   },
   server: {
     port: 5173,
