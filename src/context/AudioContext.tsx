@@ -45,38 +45,32 @@ export function AudioProvider({ children }) {
     const audio = audioRef.current;
     
     const handleCanPlay = () => {
-      console.log('✅ Audio can play');
-      setIsLoading(false);
+            setIsLoading(false);
       setError(null);
       setDuration(audio.duration || 0);
     };
 
     const handleWaiting = () => {
-      console.log('⏳ Audio waiting');
-      setIsLoading(true);
+            setIsLoading(true);
     };
 
     const handlePlaying = () => {
-      console.log('▶️ Audio playing');
-      setIsLoading(false);
+            setIsLoading(false);
       setIsPlaying(true);
     };
 
     const handlePause = () => {
-      console.log('⏸️ Audio paused');
-      setIsPlaying(false);
+            setIsPlaying(false);
     };
 
     const handleEnded = () => {
-      console.log('⏹️ Audio ended');
-      setIsPlaying(false);
+            setIsPlaying(false);
       setIsLoading(false);
       setProgress(0);
     };
 
     const handleError = (e) => {
-      console.error('❌ Audio error:', e);
-      setIsLoading(false);
+            setIsLoading(false);
       setIsPlaying(false);
       setError('Ошибка воспроизведения');
     };
@@ -106,8 +100,7 @@ export function AudioProvider({ children }) {
   }, []);
 
   const playTrack = useCallback((track) => {
-    console.log('🎵 Playing track:', track);
-    
+        
     if (!audioRef.current) {
       audioRef.current = new Audio();
     }
@@ -118,16 +111,14 @@ export function AudioProvider({ children }) {
     setError(null);
     
     if (!track?.audio_url) {
-      console.error('❌ No audio URL');
-      setIsLoading(false);
+            setIsLoading(false);
       setError('Нет аудио потока');
       return;
     }
 
     // Если тот же трек и играет - ставим на паузу
     if (currentTrack?.id === track.id && isPlaying) {
-      console.log('🔄 Same track, toggling pause');
-      audio.pause();
+            audio.pause();
       setIsPlaying(false);
       return;
     }
@@ -140,31 +131,26 @@ export function AudioProvider({ children }) {
       setCurrentTrack(track);
       
       audio.play().then(() => {
-        console.log('✅ Play started');
-        setIsPlaying(true);
+                setIsPlaying(true);
       }).catch(err => {
-        console.error('❌ Play failed:', err);
-        setIsLoading(false);
+                setIsLoading(false);
         setError('Не удалось воспроизвести');
       });
     } catch (err) {
-      console.error('❌ Play error:', err);
-      setIsLoading(false);
+            setIsLoading(false);
       setError('Ошибка воспроизведения');
     }
   }, [currentTrack, isPlaying]);
 
   const pauseTrack = useCallback(() => {
-    console.log('⏸️ Pausing track');
-    if (audioRef.current) {
+        if (audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
     }
   }, []);
 
   const togglePlay = useCallback(() => {
-    console.log('🔄 Toggle play, current:', isPlaying);
-    if (isPlaying) {
+        if (isPlaying) {
       pauseTrack();
     } else if (currentTrack) {
       playTrack(currentTrack);
@@ -172,8 +158,7 @@ export function AudioProvider({ children }) {
   }, [isPlaying, currentTrack, playTrack, pauseTrack]);
 
   const playLiveStream = useCallback((streamUrl, title = 'Live Stream') => {
-    console.log('📡 Playing live stream:', streamUrl);
-    playTrack({
+        playTrack({
       id: 'live',
       title,
       artist: 'Cosmos FM',
@@ -184,8 +169,7 @@ export function AudioProvider({ children }) {
   }, [playTrack]);
 
   const stopTrack = useCallback(() => {
-    console.log('⏹️ Stopping track');
-    if (audioRef.current) {
+        if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = '';
       setCurrentTrack(null);

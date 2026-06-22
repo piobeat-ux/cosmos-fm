@@ -37,21 +37,15 @@ export function HomeSection({ onTabChange }) {
   // Preload image function
   const preloadImage = (url) => {
     return new Promise((resolve, reject) => {
-      console.log('🔄 Preloading image:', url);
-      const img = new Image();
+            const img = new Image();
       img.crossOrigin = 'anonymous';
       
       img.onload = () => {
-        console.log('✅ Image preloaded successfully!');
-        console.log('   Width:', img.width);
-        console.log('   Height:', img.height);
-        resolve(img);
+                                resolve(img);
       };
       
       img.onerror = (e) => {
-        console.error('❌ Image preload failed:', url);
-        console.error('   Error:', e);
-        reject(e);
+                        reject(e);
       };
       
       img.src = url;
@@ -59,39 +53,32 @@ export function HomeSection({ onTabChange }) {
       // Timeout after 10 seconds
       setTimeout(() => {
         if (!img.complete) {
-          console.error('⏱️ Image preload timeout');
-          reject(new Error('Timeout'));
+                    reject(new Error('Timeout'));
         }
       }, 10000);
     });
   };
 
   useEffect(() => {
-    console.log('🎨 Settings changed:', settings);
-    console.log('📊 hero_cover_image:', settings?.hero_cover_image);
-    
+            
     if (settings?.hero_cover_image && settings.hero_cover_image.trim() !== '') {
       const imageUrl = settings.hero_cover_image;
-      console.log('✅ Using hero_cover_image:', imageUrl);
-      
+            
       // Preload image before showing
       preloadImage(imageUrl)
         .then(() => {
-          console.log('✅ Preload successful, setting image');
-          setLocalNeppyImage(imageUrl);
+                    setLocalNeppyImage(imageUrl);
           setImageLoaded(true);
           setImageError(false);
           setLoadAttempts(0);
         })
         .catch((error) => {
-          console.error('❌ Preload failed:', error);
-          setImageError(true);
+                    setImageError(true);
           setImageLoaded(false);
           setLoadAttempts(prev => prev + 1);
         });
     } else {
-      console.log('⚠️ hero_cover_image is empty');
-      setLocalNeppyImage('');
+            setLocalNeppyImage('');
       setImageError(false);
       setImageLoaded(false);
     }
@@ -120,8 +107,7 @@ export function HomeSection({ onTabChange }) {
 
   const hasValidImage = localNeppyImage && localNeppyImage.trim() !== '' && !imageError && imageLoaded;
 
-  console.log('📊 Render state:', {
-    localNeppyImage: localNeppyImage?.substring(0, 80),
+  ,
     hasValidImage,
     imageLoaded,
     imageError,
@@ -200,11 +186,9 @@ export function HomeSection({ onTabChange }) {
                         filter: isPlaying ? 'drop-shadow(0 0 60px rgba(40, 185, 208, 0.9))' : 'drop-shadow(0 20px 50px rgba(0,0,0,0.25))'
                       }}
                       onLoad={() => { 
-                        console.log('✅ Image element loaded');
-                      }}
+                                              }}
                       onError={(e) => { 
-                        console.error('❌ Image element error');
-                        setImageError(true);
+                                                setImageError(true);
                         setImageLoaded(false);
                       }}
                     />
@@ -241,8 +225,7 @@ export function HomeSection({ onTabChange }) {
                           </p>
                           <button 
                             onClick={() => {
-                              console.log('🔄 Retrying image load...');
-                              setLoadAttempts(0);
+                                                            setLoadAttempts(0);
                               if (settings?.hero_cover_image) {
                                 preloadImage(settings.hero_cover_image)
                                   .then(() => {
