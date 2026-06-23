@@ -3,7 +3,7 @@ import { useData } from '@/context/DataContext';
 import { Navigation, Plus, Trash2, Edit, X, GripVertical } from 'lucide-react';
 
 export function NavigationPage() {
-  const { navigationLinks, addNavigationLink, editNavigationLink, removeNavigationLink } = useData();
+  const { navigation, navigationLinks, addNavigationLink, editNavigationLink, removeNavigationLink } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({ label: '', url: '#/', type: 'anchor', order_index: 1, is_active: true });
@@ -38,12 +38,12 @@ export function NavigationPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2"><Navigation className="w-6 h-6 text-[#6366f1]" /> Навигация <span className="text-sm text-[#71717a]">({navigationLinks.length})</span></h1>
+        <h1 className="text-2xl font-bold flex items-center gap-2"><Navigation className="w-6 h-6 text-[#6366f1]" /> Навигация <span className="text-sm text-[#71717a]">({(navigationLinks || navigation || []).length})</span></h1>
         <button onClick={() => { setEditingItem(null); setFormData({ label: '', url: '#/', type: 'anchor', order_index: 1, is_active: true }); setIsModalOpen(true); }} className="btn-primary flex items-center gap-2"><Plus className="w-5 h-5" /> Добавить</button>
       </div>
       {message && <div className={`mb-4 p-3 rounded-xl ${message.includes('✅') ? 'bg-[#22c55e]/10 text-[#22c55e]' : 'bg-[#ef4444]/10 text-[#ef4444]'}`}>{message}</div>}
       <div className="space-y-3">
-        {navigationLinks.length === 0 ? <p className="text-center py-12 text-[#71717a]">Нет элементов навигации</p> : navigationLinks.sort((a, b) => a.order_index - b.order_index).map(link => (
+        {(navigationLinks || navigation || []).length === 0 ? <p className="text-center py-12 text-[#71717a]">Нет элементов навигации</p> : (navigationLinks || navigation || []).sort((a, b) => a.order_index - b.order_index).map(link => (
           <div key={link.id} className="glass-card rounded-xl p-4">
             <div className="flex items-center gap-4">
               <GripVertical className="w-5 h-5 text-[#71717a] cursor-move" />

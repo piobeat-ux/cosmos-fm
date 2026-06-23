@@ -53,7 +53,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      
+      setError(null);
+
+      const timeoutId = setTimeout(() => {
+        setError('Превышено время загрузки');
+        setLoading(false);
+      }, 30000);
+
       const [
         showsRes,
         hostsRes,
@@ -72,6 +78,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabase.from('site_settings').select('*')
       ]);
 
+      clearTimeout(timeoutId);
+
       const getData = (result: any) => {
         if (result.status === 'fulfilled' && result.value.data) {
           return result.value.data;
@@ -85,7 +93,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setCategories(getData(categoriesRes));
       setHotels(getData(hotelsRes));
       setNavigation(getData(navigationRes));
-      
+
       const settingsData = getData(settingsRes);
       const settingsObj: any = {};
       settingsData.forEach((item: any) => {
@@ -97,11 +105,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       setLoading(false);
       setVersion(v => v + 1);
-      
+
     } catch (err: any) {
       console.error('Error loading data:', err);
-      setLoading(false);
       setError(err.message || 'Ошибка загрузки');
+      setLoading(false);
     }
   }, []);
 

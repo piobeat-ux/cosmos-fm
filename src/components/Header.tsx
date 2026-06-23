@@ -3,13 +3,18 @@ import { useData } from '@/context/DataContext';
 import { useState } from 'react';
 
 export function Header({ onTabChange, activeTab }) {
-  const { navigation } = useData();
+  const { navigation, navigationLinks } = useData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems = navigation.length > 0
-    ? navigation.map(link => ({
-        id: link.url.replace('#/', '').replace('#', '') || 'home',
-        label: link.label,
+  // Используем navigationLinks если есть, иначе navigation, иначе дефолтные пункты
+  const navData = navigationLinks && navigationLinks.length > 0 
+    ? navigationLinks 
+    : (navigation && navigation.length > 0 ? navigation : []);
+
+  const navItems = navData.length > 0
+    ? navData.map(link => ({
+        id: link.url ? link.url.replace('#/', '').replace('#', '') || 'home' : 'home',
+        label: link.label || link.name || 'Пункт',
       }))
     : [
         { id: 'home', label: 'Эфир' },
@@ -58,6 +63,22 @@ export function Header({ onTabChange, activeTab }) {
           </button>
         </div>
       </div>
+
+      {mobileMenuOpen && (
+        <div className="md:hidden absolute top-20 left-4 right-4 bg-white rounded-2xl shadow-xl p-4">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => { onTabChange(item.id); setMobileMenuOpen(false); }}
+              className={`w-full text-left px-4 py-3 rounded-lg mb-1 font-bold ${
+                activeTab === item.id ? 'bg-gradient-to-r from-[#28B9D0] to-[#685096] text-white' : 'text-[#1A2B3C]'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
     </header>
   );
 }

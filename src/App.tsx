@@ -28,6 +28,18 @@ const LazyHostsSection = lazy(() => import('@/sections/HostsSection').then(m => 
 const LazyScheduleSection = lazy(() => import('@/sections/ScheduleSection').then(m => ({ default: m.ScheduleSection })));
 const LazyFAQSection = lazy(() => import('@/sections/FAQSection').then(m => ({ default: m.FAQSection })));
 
+
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center" style={{ background: '#B6E0EE' }}>
+    <div className="text-center">
+      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse" style={{ background: 'linear-gradient(135deg, #28B9D0, #685096)' }}>
+        <span className="text-4xl">📻</span>
+      </div>
+      <p style={{ color: '#4A6578' }}>Загрузка...</p>
+    </div>
+  </div>
+);
+
 function useHashRouter() {
   const [hash, setHash] = useState(window.location.hash);
   useEffect(() => {
@@ -37,17 +49,6 @@ function useHashRouter() {
   }, []);
   return hash;
 }
-
-const LoadingFallback = () => (
-  <div className="min-h-screen flex items-center justify-center" style={{ background: '#B6E0EE' }}>
-    <div className="text-center">
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse" style={{ background: 'linear-gradient(135deg, #28B9D0, #685096)' }}>
-        <span className="text-4xl"></span>
-      </div>
-      <p style={{ color: '#4A6578' }}>Загрузка...</p>
-    </div>
-  </div>
-);
 
 function FrontLayout() {
   const hash = useHashRouter();
