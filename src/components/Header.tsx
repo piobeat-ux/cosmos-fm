@@ -3,25 +3,20 @@ import { useData } from '@/context/DataContext';
 import { useState } from 'react';
 
 export function Header({ onTabChange, activeTab }) {
-  const { navigation, navigationLinks } = useData();
+  const { navigation } = useData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Используем navigationLinks если есть, иначе navigation, иначе дефолтные пункты
-  const navData = navigationLinks && navigationLinks.length > 0 
-    ? navigationLinks 
-    : (navigation && navigation.length > 0 ? navigation : []);
-
-  const navItems = navData.length > 0
-    ? navData.map(link => ({
+  const navItems = navigation && navigation.length > 0
+    ? navigation.map(link => ({
         id: link.url ? link.url.replace('#/', '').replace('#', '') || 'home' : 'home',
-        label: link.label || link.name || 'Пункт',
+        label: link.label || 'Item',
       }))
     : [
-        { id: 'home', label: 'Эфир' },
-        { id: 'schedule', label: 'Расписание' },
-        { id: 'hosts', label: 'Ведущие' },
-        { id: 'podcasts', label: 'Подкасты' },
-        { id: 'about', label: 'О нас' },
+        { id: 'home', label: 'Home' },
+        { id: 'schedule', label: 'Schedule' },
+        { id: 'hosts', label: 'Hosts' },
+        { id: 'podcasts', label: 'Podcasts' },
+        { id: 'about', label: 'About' },
       ];
 
   return (

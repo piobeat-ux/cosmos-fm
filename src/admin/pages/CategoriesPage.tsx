@@ -70,7 +70,7 @@ export function CategoriesPage() {
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={handleSubmit} disabled={saving} className="flex-1 btn-primary py-3 disabled:opacity-50">{saving ? 'Сохранение...' : 'Сохранить'}</button>
-              <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 rounded-xl bg-[#27273a] hover:bg-[#3f3f5a] transition">Отмена</button>
+              <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 rounded-xl bg-[#B6E0EE] hover:bg-[#A0D4E8] text-[#1A2B3C] transition">Отмена</button>
             </div>
           </div>
         </div>

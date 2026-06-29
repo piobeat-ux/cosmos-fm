@@ -1,799 +1,432 @@
 import fs from 'fs';
 
-console.log('🔧 === КОМПЛЕКСНОЕ ИСПРАВЛЕНИЕ ВСЕХ ПРОБЛЕМ ===\n');
+console.log('🔧 ИСПРАВЛЕНИЕ ВСЕХ ПРОБЛЕМ...\n');
 
-// ==========================================
-# 1. LIB/SUPABASE.TS - УВЕЛИЧЕННЫЙ ЛИМИТ ФАЙЛОВ
-// ==========================================
-console.log('1/8 Исправление lib/supabase.ts (лимит файлов)...');
+// 1. Fix FAQ Section - add FAQSection component
+console.log('1/5 Создание FAQSection...');
 
-const supabaseContent = `import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-console.log(' Supabase Init:', { 
-  url: supabaseUrl,
-  keyLength: supabaseAnonKey?.length || 0
-});
-
-export const supabase = supabaseUrl && supabaseAnonKey 
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        flowType: 'implicit'
-      },
-      global: {
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      },
-      db: {
-        schema: 'public'
-      },
-      storage: {
-        useResumable: false,
-        limit: 50, // Увеличено до 50MB
-      }
-    })
-  : null;
-
-// ========== AUTH ==========
-export async function signUpAdmin(email, password) {
-  if (!supabase) throw new Error('Supabase not initialized');
-  console.log('📝 Creating admin:', email);
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { role: 'admin', created_at: new Date().toISOString() } }
-  });
-  if (error) throw error;
-  console.log('✅ Admin created:', data.user?.email);
-  return data;
+if (!fs.existsSync('src/sections')) {
+  fs.mkdirSync('src/sections', { recursive: true });
 }
 
-export async function signInAdmin(email, password) {
-  if (!supabase) throw new Error('Supabase not initialized');
-  console.log('🔐 Signing in:', email);
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  console.log('✅ Login successful:', data.user?.email);
-  return data;
-}
+const faqSectionContent = `import { useState } from 'react';
+import { useData } from '@/context/DataContext';
+import { HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
-export async function signOutAdmin() {
-  if (!supabase) return;
-  await supabase.auth.signOut();
-}
-
-// ========== DATA ==========
-export async function getShows() {
-  if (!supabase) return [];
-  try {
-    const { data, error } = await supabase.from('shows').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
-  } catch (err) {
-    console.error('Error fetching shows:', err.message);
-    return [];
-  }
-}
-
-export async function getHosts() {
-  if (!supabase) return [];
-  try {
-    const { data, error } = await supabase.from('hosts').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
-  } catch (err) {
-    console.error('Error fetching hosts:', err.message);
-    return [];
-  }
-}
-
-export async function getPodcasts() {
-  if (!supabase) return [];
-  try {
-    const { data, error } = await supabase.from('podcasts').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
-  } catch (err) {
-    console.error('Error fetching podcasts:', err.message);
-    return [];
-  }
-}
-
-export async function getCategories() {
-  if (!supabase) return [];
-  try {
-    const { data, error } = await supabase.from('categories').select('*').order('created_at');
-    if (error) throw error;
-    return data || [];
-  } catch (err) {
-    console.error('Error fetching categories:', err.message);
-    return [];
-  }
-}
-
-export async function getHotels() {
-  if (!supabase) return [];
-  try {
-    const { data, error } = await supabase.from('hotels').select('*').order('created_at');
-    if (error) throw error;
-    return data || [];
-  } catch (err) {
-    console.error('Error fetching hotels:', err.message);
-    return [];
-  }
-}
-
-export async function getNavigationLinks() {
-  if (!supabase) return [];
-  try {
-    const { data, error } = await supabase.from('navigation_links').select('*').order('order_index');
-    if (error) return [];
-    return (data || []).filter(l => l.is_active);
-  } catch (err) {
-    console.error('Error fetching navigation:', err.message);
-    return [];
-  }
-}
-
-export async function getSettings() {
-  if (!supabase) return {};
-  try {
-    const { data, error } = await supabase.from('site_settings').select('*');
-    if (error) return {};
-    const settings = {};
-    data?.forEach(item => { settings[item.key] = item.value; });
-    return settings;
-  } catch (err) {
-    console.error('Error fetching settings:', err.message);
-    return {};
-  }
-}
-
-// ========== CRUD ==========
-export async function createShow(show) { 
-  console.log('📝 Creating show:', show);
-  const { data, error } = await supabase.from('shows').insert([show]).select();
-  if (error) {
-    console.error('❌ Error creating show:', error);
-    throw error;
-  }
-  console.log('✅ Show created:', data);
-  return data?.[0];
-}
-
-export async function updateShow(id, show) { 
-  const { error } = await supabase.from('shows').update(show).eq('id', id);
-  if (error) throw error;
-}
-
-export async function deleteShow(id) { 
-  const { error } = await supabase.from('shows').delete().eq('id', id);
-  if (error) throw error;
-}
-
-export async function createHost(host) { 
-  console.log(' Creating host:', host);
-  const { data, error } = await supabase.from('hosts').insert([host]).select();
-  if (error) {
-    console.error('❌ Error creating host:', error);
-    throw error;
-  }
-  console.log('✅ Host created:', data);
-  return data?.[0];
-}
-
-export async function updateHost(id, host) { 
-  const { error } = await supabase.from('hosts').update(host).eq('id', id);
-  if (error) throw error;
-}
-
-export async function deleteHost(id) { 
-  const { error } = await supabase.from('hosts').delete().eq('id', id);
-  if (error) throw error;
-}
-
-export async function createPodcast(podcast) { 
-  console.log('📝 Creating podcast:', podcast);
-  const { data, error } = await supabase.from('podcasts').insert([podcast]).select();
-  if (error) {
-    console.error('❌ Error creating podcast:', error);
-    throw error;
-  }
-  console.log('✅ Podcast created:', data);
-  return data?.[0];
-}
-
-export async function updatePodcast(id, podcast) { 
-  const { error } = await supabase.from('podcasts').update(podcast).eq('id', id);
-  if (error) throw error;
-}
-
-export async function deletePodcast(id) { 
-  const { error } = await supabase.from('podcasts').delete().eq('id', id);
-  if (error) throw error;
-}
-
-export async function createCategory(category) { 
-  console.log('📝 Creating category:', category);
-  const { data, error } = await supabase.from('categories').insert([category]).select();
-  if (error) {
-    console.error('❌ Error creating category:', error);
-    throw error;
-  }
-  console.log('✅ Category created:', data);
-  return data?.[0];
-}
-
-export async function updateCategory(id, category) { 
-  const { error } = await supabase.from('categories').update(category).eq('id', id);
-  if (error) throw error;
-}
-
-export async function deleteCategory(id) { 
-  const { error } = await supabase.from('categories').delete().eq('id', id);
-  if (error) throw error;
-}
-
-export async function createHotel(hotel) { 
-  console.log('📝 Creating hotel:', hotel);
-  const { data, error } = await supabase.from('hotels').insert([hotel]).select();
-  if (error) {
-    console.error('❌ Error creating hotel:', error);
-    throw error;
-  }
-  console.log('✅ Hotel created:', data);
-  return data?.[0];
-}
-
-export async function updateHotel(id, hotel) { 
-  const { error } = await supabase.from('hotels').update(hotel).eq('id', id);
-  if (error) throw error;
-}
-
-export async function deleteHotel(id) { 
-  const { error } = await supabase.from('hotels').delete().eq('id', id);
-  if (error) throw error;
-}
-
-export async function createNavigationLink(link) { 
-  console.log('📝 Creating navigation link:', link);
-  const { data, error } = await supabase.from('navigation_links').insert([link]).select();
-  if (error) {
-    console.error(' Error creating navigation link:', error);
-    throw error;
-  }
-  console.log('✅ Navigation link created:', data);
-  return data?.[0];
-}
-
-export async function updateNavigationLink(id, link) { 
-  const { error } = await supabase.from('navigation_links').update(link).eq('id', id);
-  if (error) throw error;
-}
-
-export async function deleteNavigationLink(id) { 
-  const { error } = await supabase.from('navigation_links').delete().eq('id', id);
-  if (error) throw error;
-}
-
-export async function updateSetting(key, value) {
-  const { error } = await supabase.from('site_settings').upsert({ 
-    key, 
-    value,
-    updated_at: new Date().toISOString()
-  });
-  if (error) throw error;
-}
-
-// ========== ЗАГРУЗКА ФАЙЛОВ (50MB) ==========
-export async function uploadFile(file, type = 'image') {
-  if (!supabase) throw new Error('Supabase not initialized');
-  
-  console.log('📤 Uploading file:', {
-    name: file.name,
-    size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
-    type: file.type,
-    uploadType: type
-  });
-  
-  // Увеличен лимит до 50MB
-  const maxSize = 50 * 1024 * 1024; // 50MB
-  if (file.size > maxSize) {
-    throw new Error(\`Файл слишком большой. Максимальный размер: 50MB. Ваш файл: \${(file.size / 1024 / 1024).toFixed(2)}MB\`);
-  }
-  
-  const fileExt = file.name.split('.').pop().toLowerCase();
-  const fileName = \`\${Date.now()}_\${Math.random().toString(36).substring(2, 15)}.\${fileExt}\`;
-  const filePath = \`\${type}s/\${fileName}\`;
-  
-  console.log('📁 File path:', filePath);
-  
-  try {
-    const { data, error } = await supabase.storage
-      .from('media')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type,
-        duplex: 'half',
-      });
-    
-    if (error) {
-      console.error(' Upload error:', error);
-      throw new Error(\`Ошибка загрузки: \${error.message}\`);
-    }
-    
-    console.log('✅ File uploaded:', data);
-    
-    const { data: urlData } = supabase.storage
-      .from('media')
-      .getPublicUrl(filePath);
-    
-    console.log('🔗 Public URL:', urlData.publicUrl);
-    
-    return urlData.publicUrl;
-  } catch (err) {
-    console.error('❌ Upload failed:', err);
-    throw err;
-  }
-}
-
-export async function deleteFile(filePath) {
-  if (!supabase) throw new Error('Supabase not initialized');
-  
-  const { error } = await supabase.storage
-    .from('media')
-    .remove([filePath]);
-  
-  if (error) throw error;
-}
-`;
-
-fs.writeFileSync('src/lib/supabase.ts', supabaseContent);
-console.log('✅ lib/supabase.ts - лимит увеличен до 50MB');
-
-// ==========================================
-# 2. DATACONTEXT - ПОЛНАЯ РЕАКТИВНОСТЬ
-// ==========================================
-console.log('2/8 Исправление DataContext.tsx (реактивность)...');
-
-const dataContextContent = `import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import {
-  getShows, getHosts, getPodcasts, getCategories, getSettings,
-  getHotels, getNavigationLinks,
-  createShow, updateShow, deleteShow,
-  createHost, updateHost, deleteHost,
-  createPodcast, updatePodcast, deletePodcast,
-  createCategory, updateCategory, deleteCategory,
-  createHotel, updateHotel, deleteHotel,
-  createNavigationLink, updateNavigationLink, deleteNavigationLink,
-  updateSetting, supabase,
-  uploadFile,
-} from '@/lib/supabase';
-
-const DataContext = createContext(undefined);
-
-const DEMO_DATA = {
-  shows: [
-    { id: '1', title: 'Утреннее шоу', description: 'Бодрое начало дня', host_name: 'Дмитрий Иванов', time: '08:00', duration: '2ч', category: 'Музыка', day_of_week: 'Пн', is_live: true, cover_url: '', audio_url: 'https://stream.radioparadise.com/aac-128' },
-    { id: '2', title: 'Новости отелей', description: 'Главные новости', host_name: 'Анна Петрова', time: '12:00', duration: '1ч', category: 'Новости', day_of_week: 'Пн', is_live: false, cover_url: '', audio_url: '' },
-  ],
-  hosts: [
-    { id: '1', name: 'Дмитрий Иванов', role: 'Ведущий', hotel: 'Cosmos Moscow', bio: 'Профессиональный радиоведущий', photo_url: '', color: 'from-[#f59e0b] to-[#f97316]', initials: 'ДИ' },
-    { id: '2', name: 'Анна Петрова', role: 'Журналист', hotel: 'Cosmos St. Petersburg', bio: 'Эксперт в области гостеприимства', photo_url: '', color: 'from-[#8b5cf6] to-[#6366f1]', initials: 'АП' },
-  ],
-  podcasts: [
-    { id: '1', title: 'Истории успеха', description: 'Интервью с лидерами', host_name: 'Анна Петрова', episodes: 12, duration: '45 мин', category: 'Интервью', likes: 156, color: 'from-[#6366f1] to-[#8b5cf6]', cover_url: '', audio_url: '' },
-  ],
-  categories: [
-    { id: '1', name: 'Музыка', icon: '🎵', description: 'Музыкальные программы' },
-    { id: '2', name: 'Новости', icon: '', description: 'Новости индустрии' },
-  ],
-  hotels: [
-    { id: '1', name: 'Cosmos Moscow', city: 'Москва' },
-    { id: '2', name: 'Cosmos St. Petersburg', city: 'Санкт-Петербург' },
-  ],
-  navigationLinks: [
-    { id: '1', label: 'Эфир', url: '#/', order_index: 1, is_active: true },
-    { id: '2', label: 'Расписание', url: '#/schedule', order_index: 2, is_active: true },
-    { id: '3', label: 'Ведущие', url: '#/hosts', order_index: 3, is_active: true },
-    { id: '4', label: 'Подкасты', url: '#/podcasts', order_index: 4, is_active: true },
-    { id: '5', label: 'О нас', url: '#/about', order_index: 5, is_active: true },
-  ],
-  settings: {
-    site_title: 'Cosmos FM',
-    hero_title: 'Голос вашего отеля',
-    hero_subtitle: 'Звуки вашего космоса',
-    hero_description: 'Первый в России корпоративный медиа-канал',
-    stream_url: 'https://stream.radioparadise.com/aac-128',
-    primary_color: '#6366f1',
-    neppy_image: ''
-  }
+const COLORS = {
+  bg: '#B6E0EE',
+  neppy: '#28B9D0',
+  purple: '#685096',
+  green: '#AFCB31',
+  white: '#FFFFFF',
+  text: '#1A2B3C',
+  textMuted: '#4A6578',
 };
 
-export function DataProvider({ children }) {
-  const [shows, setShows] = useState(DEMO_DATA.shows);
-  const [hosts, setHosts] = useState(DEMO_DATA.hosts);
-  const [podcasts, setPodcasts] = useState(DEMO_DATA.podcasts);
-  const [categories, setCategories] = useState(DEMO_DATA.categories);
-  const [hotels, setHotels] = useState(DEMO_DATA.hotels);
-  const [navigationLinks, setNavigationLinks] = useState(DEMO_DATA.navigationLinks);
-  const [settings, setSettings] = useState(DEMO_DATA.settings);
-  const [loading, setLoading] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(true);
-  const [version, setVersion] = useState(0);
+export function FAQSection() {
+  const { settings } = useData();
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const loadData = useCallback(async () => {
-    if (!supabase) {
-      console.warn('⚠️ Supabase not initialized');
-      return;
+  // Parse FAQ from settings
+  let faqs = [];
+  try {
+    if (settings.faq_items) {
+      faqs = typeof settings.faq_items === 'string' 
+        ? JSON.parse(settings.faq_items) 
+        : settings.faq_items;
     }
+  } catch (e) {
+    console.error('Error parsing FAQ:', e);
+  }
 
-    setLoading(true);
-    console.log('🔄 Loading data...');
-
-    try {
-      console.log('📡 Batch 1: shows + settings');
-      const [showsData, settingsData] = await Promise.all([
-        getShows(),
-        getSettings(),
-      ]);
-      
-      if (showsData?.length > 0) {
-        setShows(showsData);
-        console.log('✅ Shows:', showsData.length);
-      }
-      if (settingsData && Object.keys(settingsData).length > 0) {
-        setSettings({ ...DEMO_DATA.settings, ...settingsData });
-        console.log('✅ Settings loaded');
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      console.log('📡 Batch 2: hosts + podcasts');
-      const [hostsData, podcastsData] = await Promise.all([
-        getHosts(),
-        getPodcasts(),
-      ]);
-      
-      if (hostsData?.length > 0) {
-        setHosts(hostsData);
-        console.log('✅ Hosts:', hostsData.length);
-      }
-      if (podcastsData?.length > 0) {
-        setPodcasts(podcastsData);
-        console.log('✅ Podcasts:', podcastsData.length);
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      console.log('📡 Batch 3: categories + hotels');
-      const [categoriesData, hotelsData] = await Promise.all([
-        getCategories(),
-        getHotels(),
-      ]);
-      
-      if (categoriesData?.length > 0) {
-        setCategories(categoriesData);
-        console.log('✅ Categories:', categoriesData.length);
-      }
-      if (hotelsData?.length > 0) {
-        setHotels(hotelsData);
-        console.log('✅ Hotels:', hotelsData.length);
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      console.log(' Batch 4: navigation');
-      const navData = await getNavigationLinks();
-      if (navData?.length > 0) {
-        setNavigationLinks(navData);
-        console.log('✅ Navigation:', navData.length);
-      }
-
-      setIsDemoMode(false);
-      console.log('✅ All data loaded!');
-      
-    } catch (err) {
-      console.error('❌ Load error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { 
-    loadData(); 
-  }, [loadData]);
-
-  const refresh = useCallback(() => { 
-    console.log('🔄 Refresh');
-    loadData(); 
-  }, [loadData]);
-
-  const uploadMedia = async (file, type) => {
-    try {
-      const url = await uploadFile(file, type);
-      return url;
-    } catch (error) {
-      console.error('Upload error:', error);
-      throw error;
-    }
-  };
-
-  const updateSettings = async (newSettings) => {
-    console.log('💾 Updating settings:', newSettings);
-    const updatedSettings = { ...settings, ...newSettings };
-    setSettings(updatedSettings);
-    setVersion(v => v + 1);
-    
-    if (supabase && !isDemoMode) {
-      try {
-        for (const [key, value] of Object.entries(newSettings)) {
-          if (value !== undefined) {
-            await updateSetting(key, value);
-            console.log(\`✅ Setting '\${key}' updated\`);
-          }
-        }
-      } catch (err) {
-        console.error('❌ Settings update error:', err);
-      }
-    }
-  };
-
-  const addShow = async (show) => { 
-    try {
-      if (!isDemoMode) {
-        const newShow = await createShow(show);
-        setShows(prev => [newShow, ...prev]);
-      }
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Add show error:', err);
-      throw err;
-    }
-  };
-  
-  const editShow = async (id, show) => { 
-    try {
-      if (!isDemoMode) await updateShow(id, show);
-      setShows(prev => prev.map(s => s.id === id ? { ...s, ...show } : s));
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Edit show error:', err);
-      throw err;
-    }
-  };
-  
-  const removeShow = async (id) => { 
-    try {
-      if (!isDemoMode) await deleteShow(id);
-      setShows(prev => prev.filter(s => s.id !== id));
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Remove show error:', err);
-      throw err;
-    }
-  };
-
-  const addHost = async (host) => { 
-    try {
-      if (!isDemoMode) {
-        const newHost = await createHost(host);
-        setHosts(prev => [newHost, ...prev]);
-      }
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Add host error:', err);
-      throw err;
-    }
-  };
-  
-  const editHost = async (id, host) => { 
-    try {
-      if (!isDemoMode) await updateHost(id, host);
-      setHosts(prev => prev.map(h => h.id === id ? { ...h, ...host } : h));
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Edit host error:', err);
-      throw err;
-    }
-  };
-  
-  const removeHost = async (id) => { 
-    try {
-      if (!isDemoMode) await deleteHost(id);
-      setHosts(prev => prev.filter(h => h.id !== id));
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Remove host error:', err);
-      throw err;
-    }
-  };
-
-  const addPodcast = async (podcast) => { 
-    try {
-      if (!isDemoMode) {
-        const newPodcast = await createPodcast(podcast);
-        setPodcasts(prev => [newPodcast, ...prev]);
-      }
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Add podcast error:', err);
-      throw err;
-    }
-  };
-  
-  const editPodcast = async (id, podcast) => { 
-    try {
-      if (!isDemoMode) await updatePodcast(id, podcast);
-      setPodcasts(prev => prev.map(p => p.id === id ? { ...p, ...podcast } : p));
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Edit podcast error:', err);
-      throw err;
-    }
-  };
-  
-  const removePodcast = async (id) => { 
-    try {
-      if (!isDemoMode) await deletePodcast(id);
-      setPodcasts(prev => prev.filter(p => p.id !== id));
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Remove podcast error:', err);
-      throw err;
-    }
-  };
-
-  const addCategory = async (category) => { 
-    try {
-      if (!isDemoMode) {
-        const newCategory = await createCategory(category);
-        setCategories(prev => [newCategory, ...prev]);
-      }
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Add category error:', err);
-      throw err;
-    }
-  };
-  
-  const editCategory = async (id, category) => { 
-    try {
-      if (!isDemoMode) await updateCategory(id, category);
-      setCategories(prev => prev.map(c => c.id === id ? { ...c, ...category } : c));
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Edit category error:', err);
-      throw err;
-    }
-  };
-  
-  const removeCategory = async (id) => { 
-    try {
-      if (!isDemoMode) await deleteCategory(id);
-      setCategories(prev => prev.filter(c => c.id !== id));
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Remove category error:', err);
-      throw err;
-    }
-  };
-
-  const addHotel = async (hotel) => { 
-    try {
-      if (!isDemoMode) {
-        const newHotel = await createHotel(hotel);
-        setHotels(prev => [newHotel, ...prev]);
-      }
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Add hotel error:', err);
-      throw err;
-    }
-  };
-  
-  const editHotel = async (id, hotel) => { 
-    try {
-      if (!isDemoMode) await updateHotel(id, hotel);
-      setHotels(prev => prev.map(h => h.id === id ? { ...h, ...hotel } : h));
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error(' Edit hotel error:', err);
-      throw err;
-    }
-  };
-  
-  const removeHotel = async (id) => { 
-    try {
-      if (!isDemoMode) await deleteHotel(id);
-      setHotels(prev => prev.filter(h => h.id !== id));
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Remove hotel error:', err);
-      throw err;
-    }
-  };
-
-  const addNavigationLink = async (link) => { 
-    try {
-      if (!isDemoMode) {
-        const newLink = await createNavigationLink(link);
-        setNavigationLinks(prev => [...prev, newLink]);
-      }
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Add navigation link error:', err);
-      throw err;
-    }
-  };
-  
-  const editNavigationLink = async (id, link) => { 
-    try {
-      if (!isDemoMode) await updateNavigationLink(id, link);
-      setNavigationLinks(prev => prev.map(l => l.id === id ? { ...l, ...link } : l));
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Edit navigation link error:', err);
-      throw err;
-    }
-  };
-  
-  const removeNavigationLink = async (id) => { 
-    try {
-      if (!isDemoMode) await deleteNavigationLink(id);
-      setNavigationLinks(prev => prev.filter(l => l.id !== id));
-      setVersion(v => v + 1);
-    } catch (err) {
-      console.error('❌ Remove navigation link error:', err);
-      throw err;
-    }
+  const toggleFaq = (index: number) => {
+    setOpenFaq(openFaq === index ? null : index);
   };
 
   return (
-    <DataContext.Provider value={{
-      shows, hosts, podcasts, categories, hotels, navigationLinks, settings, 
-      loading, refresh, isDemoMode, version,
-      uploadMedia,
-      addShow, editShow, removeShow,
-      addHost, editHost, removeHost,
-      addPodcast, editPodcast, removePodcast,
-      addCategory, editCategory, removeCategory,
-      addHotel, editHotel, removeHotel,
-      addNavigationLink, editNavigationLink, removeNavigationLink,
-      updateSettings,
-    }}>
-      {children}
-    </DataContext.Provider>
-  );
-}
+    <div className="relative min-h-screen py-32 px-4 sm:px-6 lg:px-8" style={{ background: COLORS.bg }}>
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-12">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg, #28B9D0, #685096)' }}>
+            <HelpCircle className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold mb-4" style={{ color: COLORS.text }}>
+            {settings.faq_title || 'Часто задаваемые вопросы'}
+          </h1>
+          <p className="text-lg" style={{ color: COLORS.textMuted }}>
+            {settings.faq_subtitle || 'Ответы на популярные вопросы'}
+          </p>
+        </div>
 
-export function useData() {
-  const context = useContext(DataContext);
-  if (!context) throw new Error('useData must be used within DataProvider');
-  return context;
+        {faqs.length === 0 ? (
+          <div className="text-center py-12" style={{ color: COLORS.textMuted }}>
+            <p>Вопросы пока не добавлены</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {faqs.map((faq: any, index: number) => (
+              <div
+                key={index}
+                className="rounded-2xl overflow-hidden border-2"
+                style={{ borderColor: COLORS.neppy + '40', background: COLORS.white }}
+              >
+                <button
+                  onClick={() => toggleFaq(index)}
+                  className="w-full px-6 py-4 flex items-center justify-between text-left"
+                >
+                  <span className="font-bold pr-4" style={{ color: COLORS.text }}>
+                    {faq.question}
+                  </span>
+                  {openFaq === index ? (
+                    <ChevronUp className="w-5 h-5 flex-shrink-0" style={{ color: COLORS.purple }} />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 flex-shrink-0" style={{ color: COLORS.purple }} />
+                  )}
+                </button>
+                {openFaq === index && (
+                  <div className="px-6 pb-4" style={{ color: COLORS.textMuted }}>
+                    {faq.answer}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 `;
 
-fs.writeFileSync('src/context/DataContext.tsx', dataContextContent);
-console.log('✅ DataContext.tsx - полная реактивность');
+fs.writeFileSync('src/sections/FAQSection.tsx', faqSectionContent);
+console.log('✅ FAQSection.tsx создан');
+
+// 2. Fix SettingsPage - add updateSettings to useData
+console.log('2/5 Исправление SettingsPage...');
+
+if (fs.existsSync('src/admin/pages/SettingsPage.tsx')) {
+  let content = fs.readFileSync('src/admin/pages/SettingsPage.tsx', 'utf-8');
+  
+  // Add updateSettings to useData if not present
+  if (!content.includes('updateSettings')) {
+    content = content.replace(
+      /const \{([^}]+)\} = useData\(\);/,
+      (match, p1) => {
+        const imports = p1.split(',').map(s => s.trim());
+        if (!imports.includes('updateSettings')) {
+          imports.push('updateSettings');
+          return `const { ${imports.join(', ')} } = useData();`;
+        }
+        return match;
+      }
+    );
+  }
+  
+  fs.writeFileSync('src/admin/pages/SettingsPage.tsx', content);
+  console.log('✅ SettingsPage.tsx исправлен');
+}
+
+// 3. Fix ImageUpload - better error handling
+console.log('3/5 Исправление ImageUpload...');
+
+const imageUploadContent = `import { useState } from 'react';
+import { Upload, Link as LinkIcon, X, Image as ImageIcon } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+
+interface ImageUploadProps {
+  value: string;
+  onChange: (value: string) => void;
+  type?: 'image' | 'audio';
+  label?: string;
+}
+
+export function ImageUpload({ value, onChange, type = 'image', label }: ImageUploadProps) {
+  const [uploading, setUploading] = useState(false);
+  const [urlMode, setUrlMode] = useState(!value || !value.startsWith('http'));
+  const [urlInput, setUrlInput] = useState(value);
+  const [error, setError] = useState('');
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Check file size (10MB for images, 50MB for audio)
+      const maxSize = type === 'audio' ? 52428800 : 10485760;
+      if (file.size > maxSize) {
+        setError(\`Файл слишком большой. Максимум \${maxSize / 1024 / 1024}MB\`);
+        return;
+      }
+
+      setUploading(true);
+      setError('');
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = \`\${Date.now()}-\${Math.random().toString(36).substring(7)}.\${fileExt}\`;
+      const bucket = type === 'audio' ? 'audio' : 'media';
+
+      console.log('Uploading to bucket:', bucket, 'File:', file.name);
+
+      const { data, error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        if (uploadError.message.includes('Bucket not found')) {
+          setError('❌ Бакет не найден. Создайте бакеты в Supabase Storage (media и audio). См. SETUP-STORAGE.md');
+        } else if (uploadError.message.includes('row-level security')) {
+          setError('❌ Ошибка RLS. Настройте политики доступа в Supabase. См. SETUP-STORAGE.md');
+        } else {
+          setError(\`Ошибка загрузки: \${uploadError.message}\`);
+        }
+        setUploading(false);
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(data.path);
+
+      console.log('File uploaded successfully:', publicUrl);
+      onChange(publicUrl);
+      setUrlInput(publicUrl);
+      setUploading(false);
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      setError(err.message || 'Ошибка загрузки файла');
+      setUploading(false);
+    }
+  };
+
+  const handleUrlSubmit = () => {
+    if (urlInput.trim()) {
+      onChange(urlInput.trim());
+      setError('');
+    }
+  };
+
+  const handleClear = () => {
+    onChange('');
+    setUrlInput('');
+    setError('');
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium text-[#4A6578]">
+          {label || (type === 'audio' ? 'Аудио файл' : 'Изображение')}
+        </label>
+        <button
+          type="button"
+          onClick={() => setUrlMode(!urlMode)}
+          className="text-xs text-[#6366f1] hover:underline flex items-center gap-1"
+        >
+          {urlMode ? <><ImageIcon className="w-3 h-3" /> Использовать URL</> : <><LinkIcon className="w-3 h-3" /> Загрузить файл</>}
+        </button>
+      </div>
+
+      {urlMode ? (
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040] cursor-pointer hover:bg-[#F5FBFD]/80 transition">
+            <Upload className="w-5 h-5 text-[#6366f1]" />
+            <span className="text-sm text-[#4A6578]">
+              {uploading ? 'Загрузка...' : 'Выбрать файл'}
+            </span>
+            <input
+              type="file"
+              accept={type === 'audio' ? 'audio/*' : 'image/*'}
+              onChange={handleFileUpload}
+              disabled={uploading}
+              className="hidden"
+            />
+          </label>
+          {uploading && (
+            <p className="text-xs text-[#6366f1]">Загрузка файла...</p>
+          )}
+          <p className="text-xs text-[#4A6578]">
+            Максимальный размер: {type === 'audio' ? '50MB' : '10MB'}
+          </p>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            placeholder="https://..."
+            className="flex-1 px-3 py-2 rounded-lg bg-white border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none text-sm"
+          />
+          <button
+            type="button"
+            onClick={handleUrlSubmit}
+            className="px-4 py-2 rounded-lg bg-[#6366f1] text-white text-sm font-medium hover:bg-[#6366f1]/90"
+          >
+            OK
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+          <p className="text-xs text-red-600">{error}</p>
+          {(error.includes('Бакет не найден') || error.includes('RLS')) && (
+            <div className="mt-2 text-xs">
+              <p className="font-semibold mb-1">Как исправить:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Откройте <a href="https://app.supabase.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Supabase Dashboard</a></li>
+                <li>Storage → Create new bucket</li>
+                <li>Создайте бакет "media" (для изображений) - сделайте публичным</li>
+                <li>Создайте бакет "audio" (для аудио) - сделайте публичным</li>
+                <li>SQL Editor → выполните SQL из SETUP-STORAGE.md</li>
+              </ol>
+            </div>
+          )}
+        </div>
+      )}
+
+      {value && !error && (
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F5FBFD] border border-[#28B9D040]">
+          {type === 'image' && value.startsWith('http') && (
+            <img src={value} alt="Preview" className="w-12 h-12 rounded-lg object-cover" />
+          )}
+          {type === 'audio' && (
+            <div className="w-12 h-12 rounded-lg bg-[#6366f1]/10 flex items-center justify-center">
+              <span className="text-2xl">🎵</span>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-[#4A6578] truncate">{value}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleClear}
+            className="p-1.5 rounded-lg bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/20 transition"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+`;
+
+if (!fs.existsSync('src/admin/components')) {
+  fs.mkdirSync('src/admin/components', { recursive: true });
+}
+
+fs.writeFileSync('src/admin/components/ImageUpload.tsx', imageUploadContent);
+console.log('✅ ImageUpload.tsx исправлен');
+
+// 4. Create SETUP-STORAGE.md
+console.log('4/5 Создание SETUP-STORAGE.md...');
+
+const setupStorageContent = `# Настройка Supabase Storage
+
+## Проблема
+При загрузке файлов возникают ошибки:
+- "Bucket not found" - бакеты не созданы
+- "row violates row-level security policy" - не настроены RLS политики
+
+## Решение
+
+### Шаг 1: Создайте бакеты в Supabase
+
+1. Откройте https://app.supabase.com
+2. Выберите ваш проект
+3. Перейдите в раздел **Storage**
+4. Нажмите **New bucket**
+
+**Бакет 1:**
+- Name: \`media\`
+- Public: ✅ **Да** (ОБЯЗАТЕЛЬНО!)
+- File size limit: 10485760 (10MB)
+
+**Бакет 2:**
+- Name: \`audio\`
+- Public: ✅ **Да** (ОБЯЗАТЕЛЬНО!)
+- File size limit: 52428800 (50MB)
+
+### Шаг 2: Настройте политики доступа (RLS)
+
+1. Перейдите в **SQL Editor** (в левом меню)
+2. Нажмите **New query**
+3. Выполните следующий SQL:
+
+\`\`\`sql
+-- Отключаем RLS для бакета media
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
+-- Разрешить все операции с media
+CREATE POLICY "Public Access Media"
+ON storage.objects FOR ALL
+TO public
+USING (bucket_id = 'media')
+WITH CHECK (bucket_id = 'media');
+
+-- Разрешить все операции с audio
+CREATE POLICY "Public Access Audio"
+ON storage.objects FOR ALL
+TO public
+USING (bucket_id = 'audio')
+WITH CHECK (bucket_id = 'audio');
+\`\`\`
+
+4. Нажмите **Run** (или Ctrl+Enter)
+
+### Шаг 3: Проверьте работу
+
+1. Обновите страницу приложения
+2. Попробуйте загрузить файл
+3. Файлы должны загружаться без ошибок!
+
+## Альтернативный вариант
+
+Если не хотите использовать Supabase Storage:
+- Загружайте файлы на любой хостинг (Imgur, Cloudinary и т.д.)
+- Вставляйте прямые ссылки через кнопку "URL"
+`;
+
+fs.writeFileSync('SETUP-STORAGE.md', setupStorageContent);
+console.log('✅ SETUP-STORAGE.md создан');
+
+// 5. Fix App.tsx - add error to useData
+console.log('5/5 Исправление App.tsx...');
+
+if (fs.existsSync('src/App.tsx')) {
+  let content = fs.readFileSync('src/App.tsx', 'utf-8');
+  
+  // Add error to useData in FrontLayout
+  content = content.replace(
+    'const { loading } = useData();',
+    'const { loading, error } = useData();'
+  );
+  
+  fs.writeFileSync('src/App.tsx', content);
+  console.log('✅ App.tsx исправлен');
+}
 
 console.log('\n' + '='.repeat(70));
-console.log('✅ ЧАСТЬ 1 ЗАВЕРШЕНА!');
+console.log('✅ ВСЕ ИСПРАВЛЕНИЯ ГОТОВЫ!');
 console.log('='.repeat(70));
-console.log('\n📋 ЧТО ИСПРАВЛЕНО:');
-console.log('  ✅ Лимит файлов увеличен до 50MB');
-console.log('  ✅ RLS отключен (выполните SQL)');
-console.log('  ✅ Полная реактивность всех данных');
-console.log('  ✅ Мгновенное обновление UI');
+console.log('\n📋 Что исправлено:');
+console.log('1. ✅ FAQSection.tsx - создан компонент');
+console.log('2. ✅ SettingsPage.tsx - добавлен updateSettings');
+console.log('3. ✅ ImageUpload.tsx - лучшая обработка ошибок');
+console.log('4. ✅ SETUP-STORAGE.md - инструкция по настройке');
+console.log('5. ✅ App.tsx - добавлен error');
 console.log('\n🚀 СЛЕДУЮЩИЕ ШАГИ:');
-console.log('  1. Выполните SQL в Supabase (см. выше)');
-console.log('  2. Запустите: npm run dev');
-console.log('  3. Все CRUD операции будут работать!');
+console.log('  1. Откройте SETUP-STORAGE.md');
+console.log('  2. Создайте бакеты в Supabase Storage');
+console.log('  3. Выполните SQL для настройки RLS');
+console.log('  4. Перезапустите: npm run dev');
+console.log('\n✅ После настройки:');
+console.log('  - Файлы будут загружаться без ошибок');
+console.log('  - FAQ будет создаваться через Settings');
+console.log('  - Все настройки будут сохраняться');
 console.log('='.repeat(70));

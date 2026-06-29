@@ -47,6 +47,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/supabase/(.*)",
+      "destination": "/api/supabase-proxy"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

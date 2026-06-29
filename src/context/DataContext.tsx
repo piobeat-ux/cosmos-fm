@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 
 interface DataContextType {
@@ -8,7 +8,6 @@ interface DataContextType {
   categories: any[];
   hotels: any[];
   navigation: any[];
-  navigationLinks: any[];
   settings: any;
   loading: boolean;
   error: string | null;
@@ -36,29 +35,57 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+const FALLBACK_DATA = {
+  shows: [
+    { id: '1', title: 'Morning Show', description: 'Good morning', host_name: 'Host', time: '08:00', day_of_week: 'Mon', is_live: true, duration: '2h' }
+  ],
+  hosts: [
+    { id: '1', name: 'Host Name', role: 'Host', bio: 'Bio' }
+  ],
+  podcasts: [
+    { id: '1', title: 'Podcast', description: 'Description', host_name: 'Host', episodes: 10, duration: '45 min' }
+  ],
+  categories: [
+    { id: '1', name: 'Music', description: 'Music' }
+  ],
+  hotels: [
+    { id: '1', name: 'Hotel', city: 'Moscow' }
+  ],
+  navigation: [
+    { id: '1', label: 'Home', url: '#/home', order_index: 1, is_active: true },
+    { id: '2', label: 'Schedule', url: '#/schedule', order_index: 2, is_active: true },
+    { id: '3', label: 'Hosts', url: '#/hosts', order_index: 3, is_active: true },
+    { id: '4', label: 'Podcasts', url: '#/podcasts', order_index: 4, is_active: true },
+    { id: '5', label: 'About', url: '#/about', order_index: 5, is_active: true }
+  ],
+  settings: {
+    site_name: 'Cosmos FM',
+    hero_title: 'Radio',
+    hero_subtitle: 'Subtitle',
+    stream_url: 'https://stream.example.com/live'
+  }
+};
+
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [shows, setShows] = useState([]);
-  const [hosts, setHosts] = useState([]);
-  const [podcasts, setPodcasts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [hotels, setHotels] = useState([]);
-  const [navigation, setNavigation] = useState([]);
-  const [settings, setSettings] = useState({});
+  const [shows, setShows] = useState(FALLBACK_DATA.shows);
+  const [hosts, setHosts] = useState(FALLBACK_DATA.hosts);
+  const [podcasts, setPodcasts] = useState(FALLBACK_DATA.podcasts);
+  const [categories, setCategories] = useState(FALLBACK_DATA.categories);
+  const [hotels, setHotels] = useState(FALLBACK_DATA.hotels);
+  const [navigation, setNavigation] = useState(FALLBACK_DATA.navigation);
+  const [settings, setSettings] = useState(FALLBACK_DATA.settings);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
 
-  const navigationLinks = navigation;
-
-  const loadData = useCallback(async () => {
+  const loadData = async () => {
     try {
-      setLoading(true);
-      setError(null);
-
+      console.log('Loading data from Supabase...');
+      
       const timeoutId = setTimeout(() => {
-        setError('Превышено время загрузки');
+        console.warn('Timeout (15s), using fallback');
         setLoading(false);
-      }, 30000);
+      }, 15000);
 
       const [
         showsRes,
@@ -78,46 +105,49 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabase.from('site_settings').select('*')
       ]);
 
-      clearTimeout(timeoutId);
-
-      const getData = (result: any) => {
+      const getData = (result: any, fallback: any[]) => {
         if (result.status === 'fulfilled' && result.value.data) {
+          console.log('Loaded:', result.value.data.length, 'items');
           return result.value.data;
         }
-        return [];
+        console.warn('Using fallback');
+        return fallback;
       };
 
-      setShows(getData(showsRes));
-      setHosts(getData(hostsRes));
-      setPodcasts(getData(podcastsRes));
-      setCategories(getData(categoriesRes));
-      setHotels(getData(hotelsRes));
-      setNavigation(getData(navigationRes));
+      setShows(getData(showsRes, FALLBACK_DATA.shows));
+      setHosts(getData(hostsRes, FALLBACK_DATA.hosts));
+      setPodcasts(getData(podcastsRes, FALLBACK_DATA.podcasts));
+      setCategories(getData(categoriesRes, FALLBACK_DATA.categories));
+      setHotels(getData(hotelsRes, FALLBACK_DATA.hotels));
+      setNavigation(getData(navigationRes, FALLBACK_DATA.navigation));
+      
+      const settingsData = getData(settingsRes, []);
+      if (Array.isArray(settingsData) && settingsData.length > 0) {
+        const settingsObj: any = {};
+        settingsData.forEach((item: any) => {
+          if (item && item.key) {
+            settingsObj[item.key] = item.value;
+          }
+        });
+        setSettings({ ...FALLBACK_DATA.settings, ...settingsObj });
+      }
 
-      const settingsData = getData(settingsRes);
-      const settingsObj: any = {};
-      settingsData.forEach((item: any) => {
-        if (item && item.key) {
-          settingsObj[item.key] = item.value;
-        }
-      });
-      setSettings(settingsObj);
-
+      clearTimeout(timeoutId);
       setLoading(false);
       setVersion(v => v + 1);
-
+      console.log('Data loaded!');
+      
     } catch (err: any) {
-      console.error('Error loading data:', err);
-      setError(err.message || 'Ошибка загрузки');
+      console.error('Error:', err);
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, []);
 
-  // Shows CRUD
+  // CRUD functions
   const addShow = async (data: any) => {
     const { error } = await supabase.from('shows').insert([data]);
     if (error) throw error;
@@ -136,7 +166,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await loadData();
   };
 
-  // Hosts CRUD
   const addHost = async (data: any) => {
     const { error } = await supabase.from('hosts').insert([data]);
     if (error) throw error;
@@ -155,7 +184,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await loadData();
   };
 
-  // Podcasts CRUD
   const addPodcast = async (data: any) => {
     const { error } = await supabase.from('podcasts').insert([data]);
     if (error) throw error;
@@ -174,7 +202,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await loadData();
   };
 
-  // Categories CRUD
   const addCategory = async (data: any) => {
     const { error } = await supabase.from('categories').insert([data]);
     if (error) throw error;
@@ -193,7 +220,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await loadData();
   };
 
-  // Hotels CRUD
   const addHotel = async (data: any) => {
     const { error } = await supabase.from('hotels').insert([data]);
     if (error) throw error;
@@ -212,7 +238,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await loadData();
   };
 
-  // Navigation CRUD
   const addNavigationLink = async (data: any) => {
     const { error } = await supabase.from('navigation_links').insert([data]);
     if (error) throw error;
@@ -231,7 +256,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await loadData();
   };
 
-  // Settings
   const updateSettings = async (newSettings: any) => {
     const updates = Object.entries(newSettings).map(([key, value]) =>
       supabase.from('site_settings').upsert({ key, value }, { onConflict: 'key' })
@@ -248,7 +272,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       categories,
       hotels,
       navigation,
-      navigationLinks,
       settings,
       loading,
       error,

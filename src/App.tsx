@@ -28,14 +28,13 @@ const LazyHostsSection = lazy(() => import('@/sections/HostsSection').then(m => 
 const LazyScheduleSection = lazy(() => import('@/sections/ScheduleSection').then(m => ({ default: m.ScheduleSection })));
 const LazyFAQSection = lazy(() => import('@/sections/FAQSection').then(m => ({ default: m.FAQSection })));
 
-
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center" style={{ background: '#B6E0EE' }}>
     <div className="text-center">
       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse" style={{ background: 'linear-gradient(135deg, #28B9D0, #685096)' }}>
         <span className="text-4xl">📻</span>
       </div>
-      <p style={{ color: '#4A6578' }}>Загрузка...</p>
+      <p style={{ color: '#4A6578' }}>Loading...</p>
     </div>
   </div>
 );
@@ -87,10 +86,10 @@ function FrontLayout() {
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#B6E0EE' }}>
         <div className="text-center">
           <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg, #28B9D0, #685096)' }}>
-            <span className="text-4xl"></span>
+            <span className="text-4xl">📻</span>
           </div>
           <p className="text-lg font-bold" style={{ color: '#1A2B3C' }}>Cosmos FM</p>
-          <p className="text-sm mt-2" style={{ color: '#4A6578' }}>Загрузка...</p>
+          <p className="text-sm mt-2" style={{ color: '#4A6578' }}>Loading...</p>
         </div>
       </div>
     );
@@ -101,16 +100,16 @@ function FrontLayout() {
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#B6E0EE' }}>
         <div className="text-center max-w-md">
           <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: '#EF4444' }}>
-            <span className="text-4xl">️</span>
+            <span className="text-4xl">⚠️</span>
           </div>
-          <p className="text-lg font-bold mb-2" style={{ color: '#1A2B3C' }}>Ошибка загрузки</p>
+          <p className="text-lg font-bold mb-2" style={{ color: '#1A2B3C' }}>Error</p>
           <p className="text-sm mb-4" style={{ color: '#4A6578' }}>{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="px-6 py-3 rounded-xl text-white font-bold"
             style={{ background: 'linear-gradient(135deg, #28B9D0, #685096)' }}
           >
-            Попробовать снова
+            Try Again
           </button>
         </div>
       </div>
@@ -153,17 +152,8 @@ function AdminRoutes() {
     else setAdminPage('dashboard');
   }, [hash]);
 
-  const handleLogin = () => {
-    localStorage.setItem('cosmos_fm_admin', 'true');
-    setIsLoggedIn(true);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('cosmos_fm_admin');
-    setIsLoggedIn(false);
-    window.location.hash = '';
-  };
-
+  const handleLogin = () => { localStorage.setItem('cosmos_fm_admin', 'true'); setIsLoggedIn(true); };
+  const handleLogout = () => { localStorage.removeItem('cosmos_fm_admin'); setIsLoggedIn(false); window.location.hash = ''; };
   const navigateTo = (page) => {
     setAdminPage(page);
     window.location.hash = '#/admin' + (page === 'dashboard' ? '' : '/' + page);
