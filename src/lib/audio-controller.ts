@@ -142,6 +142,7 @@ export class AudioController {
   }
 
   private start(selection: StationSelection) {
+    const selectedAt = performance.now();
     if (!isSecureAudioUrl(selection.track.audio_url)) {
       this.failure('Укажите корректную HTTPS-ссылку на аудио.', true);
       return;
@@ -162,7 +163,7 @@ export class AudioController {
     };
     listen('loadedmetadata', () => {
       const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
-      const offset = selection.offsetSeconds ?? 0;
+      const offset = (selection.offsetSeconds ?? 0) + (selection.occurrenceId ? (performance.now() - selectedAt) / 1000 : 0);
       if (offset > 0 && duration > 0) {
         try { audio.currentTime = Math.min(offset, Math.max(0, duration - 0.05)); }
         catch { this.failure('Не удалось присоединиться к передаче.'); return; }
@@ -183,8 +184,10 @@ export class AudioController {
     listen('ended', () => {
       if (!this.requested) return;
       if (this.occurrenceId) this.finishedOccurrences.add(this.occurrenceId);
+      this.update({ mode: 'station' });
       if (!this.refreshStation) { this.startStation(); return; }
       this.update({ isPlaying: false, isLoading: true });
+      this.armTimeout(generation);
       void this.refreshStation().catch(() => undefined).then(() => {
         if (generation === this.generation && this.requested) this.startStation();
       });
@@ -239,6 +242,7 @@ export class AudioController {
     this.pendingRecording = { track, resolve };
     this.requested = true;
     this.update({ mode: 'manual', currentTrack: track, isPlaying: false, isLoading: true, error: null, progress: 0, duration: 0 });
+    this.armTimeout(generation);
     void resolve().then(url => {
       if (generation !== this.generation || !this.requested) return;
       this.start({ track: { ...track, audio_url: url } });
@@ -277,8 +281,10 @@ export class AudioController {
     if (!this.audio || this.state.mode === 'station' || !Number.isFinite(time)) return;
     const duration = this.state.duration;
     if (duration > 0) {
-      this.audio.currentTime = Math.max(0, Math.min(time, duration));
-      this.update({ progress: this.audio.currentTime });
+      try {
+        this.audio.currentTime = Math.max(0, Math.min(time, duration));
+        this.update({ progress: this.audio.currentTime });
+      } catch { this.update({ error: 'Этот источник не поддерживает перемотку.' }); }
     }
   };
 

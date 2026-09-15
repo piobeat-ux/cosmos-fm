@@ -11,18 +11,28 @@ export function CategoriesPage() {
   const [message, setMessage] = useState('');
 
   const handleSubmit = async () => {
+    if (saving) return;
     if (!formData.name) { setMessage('❌ Укажите название'); return; }
     setSaving(true);
     try {
       if (editingItem) await editCategory(editingItem.id, formData);
       else await addCategory(formData);
       setMessage('✅ Сохранено!');
-      setTimeout(() => { setIsModalOpen(false); setEditingItem(null); setFormData({ name: '', icon: '🎵', description: '' }); setMessage(''); }, 800);
+      setIsModalOpen(false); setEditingItem(null); setFormData({ name: '', icon: '🎵', description: '' });
     } catch (e) { setMessage('❌ ' + e.message); }
     finally { setSaving(false); }
   };
 
+  const handleDelete = async (id: string) => {
+    if (saving || !confirm('Удалить запись?')) return;
+    setSaving(true); setMessage('');
+    try { await removeCategory(id); setMessage('✅ Удалено'); }
+    catch (cause) { setMessage('❌ ' + (cause instanceof Error ? cause.message : 'Не удалось удалить запись.')); }
+    finally { setSaving(false); }
+  };
+
   const handleEdit = (item) => {
+    if (saving) return;
     setEditingItem(item);
     setFormData({ name: item.name||'', icon: item.icon||'🎵', description: item.description||'' });
     setIsModalOpen(true);
@@ -48,7 +58,7 @@ export function CategoriesPage() {
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={() => handleEdit(c)} className="flex-1 py-2 rounded-lg bg-[#6366f1]/10 text-[#6366f1] hover:bg-[#6366f1]/20 transition text-sm"><Edit className="w-4 h-4 inline mr-1" /> Изменить</button>
-              <button onClick={() => { if(confirm('Удалить?')) removeCategory(c.id); }} className="py-2 px-3 rounded-lg bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/20 transition"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => void handleDelete(c.id)} disabled={saving} aria-label="Удалить запись" className="py-2 px-3 rounded-lg bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/20 transition"><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
         ))}

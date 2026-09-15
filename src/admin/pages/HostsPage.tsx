@@ -14,18 +14,28 @@ export function HostsPage() {
   const [message, setMessage] = useState('');
 
   const handleSubmit = async () => {
+    if (saving) return;
     if (!formData.name) { setMessage('❌ Укажите имя'); return; }
     setSaving(true);
     try {
       if (editingItem) await editHost(editingItem.id, formData);
       else await addHost(formData);
       setMessage('✅ Сохранено!');
-      setTimeout(() => { setIsModalOpen(false); setEditingItem(null); setFormData({ name: '', role: '', hotel: '', bio: '', photo_url: '', color: COLORS[0] }); setMessage(''); }, 800);
+      setIsModalOpen(false); setEditingItem(null); setFormData({ name: '', role: '', hotel: '', bio: '', photo_url: '', color: COLORS[0] });
     } catch (e) { setMessage('❌ ' + e.message); }
     finally { setSaving(false); }
   };
 
+  const handleDelete = async (id: string) => {
+    if (saving || !confirm('Удалить запись?')) return;
+    setSaving(true); setMessage('');
+    try { await removeHost(id); setMessage('✅ Удалено'); }
+    catch (cause) { setMessage('❌ ' + (cause instanceof Error ? cause.message : 'Не удалось удалить запись.')); }
+    finally { setSaving(false); }
+  };
+
   const handleEdit = (item) => {
+    if (saving) return;
     setEditingItem(item);
     setFormData({ name: item.name||'', role: item.role||'', hotel: item.hotel||'', bio: item.bio||'', photo_url: item.photo_url||'', color: item.color||COLORS[0] });
     setIsModalOpen(true);
@@ -53,7 +63,7 @@ export function HostsPage() {
             {h.bio && <p className="text-sm text-[#4A6578] mt-3 line-clamp-2">{h.bio}</p>}
             <div className="flex gap-2 mt-4">
               <button onClick={() => handleEdit(h)} className="flex-1 py-2 rounded-lg bg-[#6366f1]/10 text-[#6366f1] hover:bg-[#6366f1]/20 transition text-sm"><Edit className="w-4 h-4 inline mr-1" /> Изменить</button>
-              <button onClick={() => { if(confirm('Удалить?')) removeHost(h.id); }} className="py-2 px-3 rounded-lg bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/20 transition"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => void handleDelete(h.id)} disabled={saving} aria-label="Удалить запись" className="py-2 px-3 rounded-lg bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/20 transition"><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
         ))}

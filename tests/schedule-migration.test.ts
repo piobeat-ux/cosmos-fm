@@ -31,6 +31,40 @@ test('broadcast schedule, publication and protected audio', async t => {
     assert.deepEqual((await asAnon("select public.get_schedule(now(),now()+interval '14 days') as schedule")).rows[0].schedule, []);
   });
   await db.query('update public.broadcast_schedule set published=true where id=$1', [entry]);
+  await t.test('published schedules prevent unpublishing or replacing their recording', async () => {
+    await assert.rejects(db.query('update public.shows set published=false where id=$1', [show]), /эфир/i);
+    await assert.rejects(db.query('update public.shows set asset_id=null where id=$1', [show]), /эфир/i);
+  });
+  await t.test('a draft recording cannot be published in the schedule', async () => {
+    const draft = (await db.query<{ id: string }>("insert into public.podcasts(title,asset_id,published) values ('Draft',$1,false) returning id", [asset])).rows[0].id;
+    await assert.rejects(db.query("insert into public.broadcast_schedule(podcast_id,starts_at,duration_seconds,published) values ($1,now()+interval '3 days',600,true)", [draft]), /опублик/i);
+  });
+  const adminId = '00000000-0000-4000-8000-000000000001';
+  await db.query('insert into private.admin_users(user_id) values ($1)', [adminId]);
+  const asAdmin = async (sql: string, params: unknown[]) => {
+    await db.exec('begin');
+    try {
+      await db.query("select set_config('request.jwt.claim.sub',$1,true)", [adminId]);
+      await db.exec('set local role authenticated');
+      return await db.query(sql, params);
+    } finally { await db.exec('rollback'); }
+  };
+  await t.test('atomic media save creates both recording and initial airing', async () => {
+    const start = new Date(Date.now() + 3 * 86400000).toISOString();
+    const result = await asAdmin(`with saved as (
+      select public.save_media_record('podcast',null,$1::jsonb,$2::jsonb) as id
+    ) select id from saved`, [JSON.stringify({ title: 'Atomic podcast', asset_id: asset, published: true, catalog_mode: 'after_airing' }), JSON.stringify({ starts_at: start, published: true, weekly: false })]);
+    assert.equal(result.rows.length, 1);
+    assert.match(String(result.rows[0].id), /^[a-f0-9-]{36}$/);
+  });
+  await t.test('a conflicting initial airing rolls back the newly saved recording', async () => {
+    const start = (await db.query<{ starts_at: string }>('select starts_at from public.broadcast_schedule where id=$1', [entry])).rows[0].starts_at;
+    await assert.rejects(asAdmin("select public.save_media_record('podcast',null,$1::jsonb,$2::jsonb)", [JSON.stringify({ title: 'Must be rolled back', asset_id: asset, published: true, catalog_mode: 'after_airing' }), JSON.stringify({ starts_at: start, published: true })]), /пересекается/);
+    assert.equal((await db.query("select id from public.podcasts where title='Must be rolled back'")).rows.length, 0);
+  });
+  await t.test('anonymous clients cannot invoke the media-write RPC', async () => {
+    await assert.rejects(asAnon("select public.save_media_record('show',null,'{}'::jsonb,null)"), /permission denied/);
+  });
   await t.test('published weekly calendar has occurrences but no audio URL or asset ID', async () => {
     const result = (await asAnon("select public.get_schedule(now(),now()+interval '14 days') as schedule")).rows[0].schedule as Record<string, unknown>[];
     assert.equal(result.length, 2);

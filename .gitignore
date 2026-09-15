@@ -12,4 +12,3 @@ supabase/.temp/
 !tests/fixtures/*.sql
 fix-*.js
 test-*.js
-TESTING.md

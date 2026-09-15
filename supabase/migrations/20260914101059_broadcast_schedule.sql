@@ -82,6 +82,9 @@ begin
   if actual_duration is null then raise exception 'Перед назначением эфира проверьте MP3 в карточке записи.'; end if;
   new.duration_seconds := actual_duration;
   if new.published then
+    if not coalesce((select published from public.shows where id=new.show_id),(select published from public.podcasts where id=new.podcast_id),false) then
+      raise exception 'Сначала опубликуйте саму запись, затем эфир.';
+    end if;
     for other in select * from public.broadcast_schedule where published and id <> new.id loop
       anchor := greatest(new.starts_at, other.starts_at);
       -- An overlapping pair either intersects at the later initial start or within one week.
@@ -103,9 +106,9 @@ for each row execute function private.validate_broadcast();
 create function private.prepare_catalog_record()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
-  if tg_op = 'UPDATE' and new.asset_id is distinct from old.asset_id and exists (
+  if tg_op = 'UPDATE' and (new.asset_id is distinct from old.asset_id or (old.published and not new.published)) and exists (
     select 1 from public.broadcast_schedule where published and (show_id = new.id or podcast_id = new.id)
-  ) then raise exception 'Сначала снимите эфиры этой записи с публикации, затем замените MP3.'; end if;
+  ) then raise exception 'Сначала снимите эфиры этой записи с публикации, затем измените MP3 или статус записи.'; end if;
   if new.catalog_mode = 'immediate' then
     new.catalog_visible_at := coalesce(new.catalog_visible_at, now());
   elsif tg_op = 'INSERT' then

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createExternalAsset, createUploadedAsset, type MediaAsset } from '@/lib/media';
 
-export function AudioUpload({ assetId, legacyUrl, onChange }: { assetId?: string; legacyUrl?: string; onChange: (asset: MediaAsset) => void }) {
+export function AudioUpload({ assetId, legacyUrl, onChange, onBusyChange }: { assetId?: string; legacyUrl?: string; onChange: (asset: MediaAsset) => void; onBusyChange?: (busy: boolean) => void }) {
   const [mode, setMode] = useState<'file' | 'url'>('file');
   const [url, setUrl] = useState(legacyUrl || '');
   const [busy, setBusy] = useState(false);
@@ -9,23 +9,24 @@ export function AudioUpload({ assetId, legacyUrl, onChange }: { assetId?: string
   const [error, setError] = useState('');
   const [details, setDetails] = useState<MediaAsset | null>(null);
   const operation = useRef<AbortController | null>(null);
-  useEffect(() => () => operation.current?.abort(), []);
+  useEffect(() => () => { operation.current?.abort(); operation.current = null; }, []);
 
   const upload = async (file?: File) => {
     if (busy || (mode === 'file' && !file)) return;
     const controller = new AbortController();
     operation.current = controller;
-    setBusy(true); setError(''); setProgress(0);
-    const timeout = setTimeout(() => controller.abort(), mode === 'url' ? 120_000 : 600_000);
+    setBusy(true); onBusyChange?.(true); setError(''); setProgress(0);
+    let timedOut = false;
+    const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, mode === 'url' ? 120_000 : 600_000);
     try {
       const asset = file ? await createUploadedAsset(file, controller.signal, setProgress) : await createExternalAsset(url, controller.signal);
       if (controller.signal.aborted) return;
       setDetails(asset); onChange(asset);
     } catch (cause) {
-      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Не удалось загрузить запись.');
+      if (operation.current === controller) setError(timedOut ? 'Проверка или загрузка заняла слишком много времени. Повторите попытку.' : controller.signal.aborted ? 'Загрузка отменена.' : cause instanceof Error ? cause.message : 'Не удалось загрузить запись.');
     } finally {
       clearTimeout(timeout);
-      if (operation.current === controller) { operation.current = null; setBusy(false); }
+      if (operation.current === controller) { operation.current = null; setBusy(false); onBusyChange?.(false); }
     }
   };
 

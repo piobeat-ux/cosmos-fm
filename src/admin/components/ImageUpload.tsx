@@ -1,31 +1,34 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { safeHttpsUrl } from '@/lib/content-validation';
 
 const types: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
-export function ImageUpload({ value, onChange, label = 'Изображение' }: { value: string; onChange: (value: string) => void; type?: 'image'; label?: string }) {
+export function ImageUpload({ value, onChange, label = 'Изображение', onBusyChange }: { value: string; onChange: (value: string) => void; type?: 'image'; label?: string; onBusyChange?: (busy: boolean) => void }) {
   const [url, setUrl] = useState(value);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => setUrl(value), [value]);
 
   const upload = async (file?: File) => {
     if (!file || busy) return;
-    setBusy(true); setError('');
+    setBusy(true); onBusyChange?.(true); setError('');
     try {
       const ext = types[file.type];
       if (!ext || !file.size || file.size > 10_000_000) throw new Error('Выберите JPG, PNG, WebP или GIF размером до 10 МБ.');
       const decoded = await createImageBitmap(file);
       const tooLarge = decoded.width > 8000 || decoded.height > 8000;
       decoded.close();
+      if (!mounted.current) return;
       if (tooLarge) throw new Error('Размер изображения — не больше 8000 × 8000 пикселей.');
       const path = `${crypto.randomUUID()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from('media').upload(path, file, { contentType: file.type, upsert: false });
       if (uploadError) throw new Error('Не удалось загрузить изображение. Проверьте соединение и права доступа.');
       const { data } = supabase.storage.from('media').getPublicUrl(path);
-      onChange(data.publicUrl);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Файл не удалось прочитать.'); }
-    finally { setBusy(false); }
+      if (mounted.current) onChange(data.publicUrl);
+    } catch (cause) { if (mounted.current) setError(cause instanceof Error ? cause.message : 'Файл не удалось прочитать.'); }
+    finally { if (mounted.current) { setBusy(false); onBusyChange?.(false); } }
   };
   return <fieldset className="rounded-xl border border-[#28B9D040] p-4 space-y-3">
     <legend className="px-2 font-medium">{label}</legend>

@@ -52,6 +52,9 @@ export function StationBridge() {
             const url = await resolveAudio(airing.asset_id);
             if (disposed) return;
             current = { occurrenceId: identity!, starts: Date.parse(airing.starts_at), ends: Date.parse(airing.ends_at), track: { id: airing.media_id, title: airing.title, audio_url: url, type: airing.kind, isLive: false } };
+          } else {
+            current.ends = Date.parse(airing.ends_at);
+            current.track = { ...current.track, title: airing.title };
           }
           nextDelay = Math.min(nextDelay, Math.max(100, Date.parse(airing.ends_at) - serverNow() + 50));
         } else current = null;
@@ -71,7 +74,12 @@ export function StationBridge() {
       flight = request().finally(() => { flight = null; });
       return flight;
     };
-    controller.setStationRefresh(poll);
+    controller.setStationRefresh(async () => {
+      // Rounded MP3 duration can end up to one second before the next airing boundary.
+      const remaining = current ? current.ends - serverNow() : 0;
+      if (remaining > 0 && remaining <= 1500) await new Promise(resolve => setTimeout(resolve, remaining + 30));
+      await poll();
+    });
     const wake = () => { if (document.visibilityState === 'visible') void poll(); };
     document.addEventListener('visibilitychange', wake);
     window.addEventListener('online', wake);

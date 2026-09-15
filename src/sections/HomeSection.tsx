@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Radio, Music, Mic, Play, Pause, Loader2 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { useAudio } from '@/context/AudioContext';
+import { safeHttpsUrl } from '@/lib/content-validation';
 
 const COLORS = {
   bg: '#B6E0EE',
@@ -14,13 +15,14 @@ const COLORS = {
 };
 
 export function HomeSection({ onTabChange }) {
-  const { settings, version } = useData();
+  const { settings } = useData();
   const { playLiveStream, isPlaying, isLoading, error: audioError } = useAudio();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [localNeppyImage, setLocalNeppyImage] = useState('');
-  const [localNeppyPhrase, setLocalNeppyPhrase] = useState('ПРИВЕТ! Я НЭППИ');
+  const localNeppyPhrase = settings.neppy_phrase || 'ПРИВЕТ! Я НЭППИ';
   const [loadAttempts, setLoadAttempts] = useState(0);
+  const [imageRetry, setImageRetry] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -30,44 +32,21 @@ export function HomeSection({ onTabChange }) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const preloadImage = (url) => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = (e) => reject(e);
-      img.src = url;
-      setTimeout(() => {
-        if (!img.complete) reject(new Error('Timeout'));
-      }, 10000);
-    });
-  };
-
   useEffect(() => {
-    if (settings?.hero_cover_image && settings.hero_cover_image.trim() !== '') {
-      const imageUrl = settings.hero_cover_image;
-      preloadImage(imageUrl)
-        .then(() => {
-          setLocalNeppyImage(imageUrl);
-          setImageLoaded(true);
-          setImageError(false);
-          setLoadAttempts(0);
-        })
-        .catch(() => {
-          setImageError(true);
-          setImageLoaded(false);
-          setLoadAttempts(prev => prev + 1);
-        });
-    } else {
-      setLocalNeppyImage('');
-      setImageError(false);
-      setImageLoaded(false);
-    }
-    
-    if (settings?.neppy_phrase) {
-      setLocalNeppyPhrase(settings.neppy_phrase);
-    }
-  }, [settings, version]);
+    const imageUrl = safeHttpsUrl(settings.hero_cover_image);
+    setLocalNeppyImage(''); setImageLoaded(false); setImageError(false);
+    if (!imageUrl) return;
+    let active = true;
+    const image = new Image();
+    const timer = setTimeout(() => { if (active) { setImageError(true); setLoadAttempts(value => value + 1); } }, 10000);
+    image.onload = () => {
+      clearTimeout(timer);
+      if (active) { setLocalNeppyImage(imageUrl); setImageLoaded(true); setImageError(false); setLoadAttempts(0); }
+    };
+    image.onerror = () => { clearTimeout(timer); if (active) { setImageError(true); setLoadAttempts(value => value + 1); } };
+    image.src = imageUrl;
+    return () => { active = false; clearTimeout(timer); image.onload = null; image.onerror = null; };
+  }, [settings.hero_cover_image, imageRetry]);
 
   const handlePlayClick = () => {
     playLiveStream(settings.stream_url || '', settings.site_title || 'Cosmos FM');
@@ -187,28 +166,14 @@ export function HomeSection({ onTabChange }) {
                             Попыток: {loadAttempts}
                           </p>
                           <button 
-                            onClick={() => {
-                              setLoadAttempts(0);
-                              if (settings?.hero_cover_image) {
-                                preloadImage(settings.hero_cover_image)
-                                  .then(() => {
-                                    setLocalNeppyImage(settings.hero_cover_image);
-                                    setImageLoaded(true);
-                                    setImageError(false);
-                                  })
-                                  .catch(() => {
-                                    setImageError(true);
-                                    setLoadAttempts(prev => prev + 1);
-                                  });
-                              }
-                            }}
+                            onClick={() => { setLoadAttempts(0); setImageRetry(value => value + 1); }}
                             className="px-4 py-2 rounded-lg text-sm font-bold text-white"
                             style={{ background: COLORS.neppy }}
                           >
                             Попробовать снова
                           </button>
                           <button 
-                            onClick={() => window.open(localNeppyImage || settings?.hero_cover_image, '_blank')}
+                            onClick={() => { const url = safeHttpsUrl(localNeppyImage || settings.hero_cover_image); if (url) window.open(url, '_blank', 'noopener,noreferrer'); }}
                             className="mt-2 block text-xs underline mx-auto"
                             style={{ color: COLORS.purple }}
                           >

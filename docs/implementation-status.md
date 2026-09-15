@@ -20,12 +20,11 @@ The authenticated GitHub integration rejected branch creation with HTTP 403 (`Re
 
 ## Remaining release gates
 
-1. Implement and test player, schedule model/API/calendar, upload validation and publication rules.
-2. Harden authentication, database/storage permissions and existing content/settings flows.
-3. Update/pin dependencies, typecheck, lint, regression tests and CI.
-4. Review and test incremental migrations against a disposable database with representative existing content.
-5. Publish through the GitHub connector, verify preview, apply reviewed migration, deploy and verify production.
-6. Restore temporary Supabase/Vercel permissions and disable the continuation heartbeat after completion.
+1. Final XHigh review of migrations and release plan; address any findings.
+2. Restore GitHub connector write access. Latest installation listing still returns no installations; original branch creation returned 403.
+3. Publish through the GitHub connector and verify preview against an isolated hosted Supabase environment, including Auth/Storage/TUS and real audio.
+4. Apply reviewed production migrations, provision the verified administrator, deploy and verify production using XHigh.
+5. Restore temporary Supabase/Vercel permissions and disable the continuation heartbeat after completion.
 
 The active goal and hourly continuation heartbeat are attached to the Codex task. A scheduler wakeup is not a guarantee that account limits or missing connector access will have recovered.
 
@@ -33,15 +32,20 @@ The active goal and hourly continuation heartbeat are attached to the Codex task
 
 Implemented: typed player/controller and playback regression tests; server-authorized admin gate; data loading/error handling and atomic settings upsert; two incremental migrations; private audio assets; calendar month/week/day and drag-to-reschedule; optional weekly repeat and repeat end; shared recording form with MP3/size/duration validation and TUS upload; atomic recording + initial airing RPC; public schedule and recording library; server-clock station bridge; guarded external links/FAQ; dependency update/pinning and CI.
 
-Checks so far: app TypeScript passed, ESLint passed, Vite 8 production build passed before the last UI edits. Security migration test and schedule migration test passed against PGlite with a disposable legacy schema. Latest dependency audit: zero advisories. Browser verification and expanded edge-case tests are still pending. The migrations have NOT been applied to production.
+Checks as of 2026-09-14: app TypeScript, zero-warning ESLint, 43 tests and Vite 8 production build passed together after the latest fixes. Migrations ran against PGlite with a disposable legacy schema. Dependency audit returned zero advisories (recheck at release). The migrations have NOT been applied to production.
+
+Browser evidence from the isolated UI/PGlite harness: published weekly show saved for Wednesday 10:00–10:10; overlapping podcast at 10:05 rejected with database error; adjacent podcast at 10:10–10:20 accepted; following week contains only the recurring show. Adding another airing to an existing public recording preserves its catalog visibility and saves the requested date/time. Month view renders the repeats. Desktop viewport 1280px has no horizontal document overflow. This does not verify mobile audio or hosted Auth/Storage.
+
+Browser testing caught datetime-local input changes not persisting through the change handler in this environment; explicit input handling now persists the chosen time in both calendar and media forms. Additional fixes cover upload-busy save guards, stale image callbacks, administrative deletion errors, settings edits during saving, dashboard links, paginated calendar loading, and player deadlines while waiting for a signed URL or station refresh.
+
+Removed obsolete repair/reset scripts and tracked backup source copies (recoverable from earlier Git commits). Replaced conflicting deployment/storage/reset instructions with README.md, DEPLOYMENT.md and TESTING.md. No database content or stored media was deleted.
 
 Important remaining work before release:
 
-- Exercise the full editor in an isolated UI harness, plus public/mobile browser checks; verify TUS against the actual storage service only once deployment is ready.
-- Add regressions for async URL resolution/stop, station refresh at consecutive airing boundaries, atomic-save rollback, weekly boundary collisions, and input validation.
-- Prevent unpublishing/replacing recordings that still have published schedule entries; verify publication changes do not release unheard drafts.
-- Fix remaining legacy administrative delete promises, homepage image-load cleanup, settings heading remounts and inert dashboard actions.
-- Review exact synchronization during metadata loading, first-click readiness, unavailable-source fallback and fresh radio return after recording end.
-- Replace obsolete root reset/storage instructions and repair scripts with the reviewed migration/runbook workflow.
+- Verify actual TUS/Auth/Storage and new-record upload-to-airing publication flow against isolated hosted Supabase, not only PGlite. The fixture harness deliberately does not simulate storage.
+- Check drag rescheduling, responsive/mobile interaction, keyboard dialog focus and real mobile audio playback including background/resume. Physical iOS/Android media policies are not proven by desktop tests.
+- Review exact synchronization during metadata loading, first-click readiness and unavailable-source fallback against real audio.
+- Review migration concurrency and security-definer boundaries on hosted PostgreSQL; PGlite tests are not a multi-connection concurrency proof.
+- TypeScript checks run, but the legacy project still has strict=false; do not describe it as fully strict-typed.
 - Final migration/production review must use the user-requested XHigh setting; the current task cannot claim that switch without a verified model-setting operation.
 - GitHub connector write access is still unverified after the earlier 403. No remote commit, deployment or production mutation has occurred.

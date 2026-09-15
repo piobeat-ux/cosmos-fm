@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -21,16 +21,26 @@ export function CalendarPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const loadGeneration = useRef(0);
   const records = [...shows.map(row => ({ ...row, kind: 'show' as const })), ...podcasts.map(row => ({ ...row, kind: 'podcast' as const }))];
 
   const load = useCallback(async () => {
-    const { data, error: queryError } = await supabase.from('broadcast_schedule').select('*').order('starts_at');
-    if (queryError) throw new Error('Не удалось загрузить календарь. Повторите попытку.');
-    setEntries(data as BroadcastSchedule[]); setLoaded(true);
+    const generation = ++loadGeneration.current;
+    const all: BroadcastSchedule[] = [];
+    for (let offset = 0; ; offset += 500) {
+      const { data, error: queryError } = await supabase.from('broadcast_schedule').select('*').order('starts_at').order('id').range(offset, offset + 499);
+      if (generation !== loadGeneration.current) return;
+      if (queryError) throw new Error('Не удалось загрузить календарь. Повторите попытку.');
+      all.push(...data as BroadcastSchedule[]);
+      if (data.length < 500) break;
+    }
+    setEntries(all); setLoaded(true);
   }, []);
-  useEffect(() => { void load().catch(cause => setError(cause.message)); }, [load]);
+  const cancelLoad = useCallback(() => { loadGeneration.current++; }, []);
+  useEffect(() => { void load().catch(cause => setError(cause.message)); return cancelLoad; }, [load, cancelLoad]);
 
   const edit = (entry: BroadcastSchedule) => {
+    if (busy) return;
     setEditing(entry);
     setForm({ media: `${entry.show_id ? 'show' : 'podcast'}:${entry.show_id || entry.podcast_id}`, starts_at: stationInput(entry.starts_at), weekly: entry.weekly, repeat_until: entry.repeat_until ? stationInput(entry.repeat_until) : '', published: entry.published });
     setError(''); setOpen(true);
@@ -57,8 +67,9 @@ export function CalendarPage() {
     if (!editing || busy || !confirm(editing.weekly ? 'Удалить всю серию повторов из расписания?' : 'Удалить эфир из расписания?')) return;
     setBusy(true); setError('');
     try {
-      const { error: deleteError } = await supabase.from('broadcast_schedule').delete().eq('id', editing.id);
+      const { error: deleteError, data } = await supabase.from('broadcast_schedule').delete().eq('id', editing.id).select('id');
       if (deleteError) throw deleteError;
+      if (!data?.length) throw new Error('Эфир уже удалён или недоступен.');
       setOpen(false); await Promise.all([load(), refresh()]);
     } catch { setError('Не удалось удалить эфир.'); }
     finally { setBusy(false); }
@@ -102,9 +113,9 @@ export function CalendarPage() {
       <section role="dialog" aria-modal="true" aria-labelledby="airing-title" className="my-8 w-full max-w-lg rounded-2xl bg-white p-6 space-y-4">
         <h2 id="airing-title" className="text-xl font-bold">{editing ? 'Изменить эфир' : 'Новый эфир'}</h2>
         <label className="block">Запись<select value={form.media} onChange={event => setForm({ ...form, media: event.target.value })} className="mt-1 w-full rounded-lg border p-2"><option value="">Выберите передачу или подкаст</option>{records.map(row => <option key={`${row.kind}:${row.id}`} value={`${row.kind}:${row.id}`} disabled={!row.asset_id}>{row.kind === 'show' ? 'Передача' : 'Подкаст'} · {row.title}{!row.asset_id ? ' (нужна проверка MP3)' : ''}</option>)}</select></label>
-        <label className="block">Начало по Москве<input type="datetime-local" value={form.starts_at} onChange={event => setForm({ ...form, starts_at: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label>
+        <label className="block">Начало по Москве<input type="datetime-local" value={form.starts_at} onInput={event => { const value = event.currentTarget.value; setForm(current => ({ ...current, starts_at: value })); }} onChange={event => setForm(current => ({ ...current, starts_at: event.target.value }))} className="mt-1 w-full rounded-lg border p-2" /></label>
         <label className="flex gap-2"><input type="checkbox" checked={form.weekly} onChange={event => setForm({ ...form, weekly: event.target.checked })} /> Повторять каждую неделю</label>
-        {form.weekly && <label className="block">Последний повтор (необязательно)<input type="datetime-local" value={form.repeat_until} onChange={event => setForm({ ...form, repeat_until: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label>}
+        {form.weekly && <label className="block">Последний повтор (необязательно)<input type="datetime-local" value={form.repeat_until} onInput={event => { const value = event.currentTarget.value; setForm(current => ({ ...current, repeat_until: value })); }} onChange={event => setForm(current => ({ ...current, repeat_until: event.target.value }))} className="mt-1 w-full rounded-lg border p-2" /></label>}
         <label className="flex gap-2"><input type="checkbox" checked={form.published} onChange={event => setForm({ ...form, published: event.target.checked })} /> Опубликовать в эфирной сетке</label>
         <p className="text-xs text-[#4A6578]">Черновик не выходит в эфир. Для трансляции сама запись также должна быть опубликована.</p>
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}

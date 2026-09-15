@@ -92,7 +92,7 @@ test('station joins at an offset and lets programs finish despite schedule edits
   controller.setStationResolver(() => current);
   controller.startStation();
   elements[0].emit('loadedmetadata');
-  assert.equal(elements[0].currentTime, 123);
+  assert.ok(Math.abs(elements[0].currentTime - 123) < 0.1);
   current = null;
   controller.reconcileStation();
   assert.equal(elements.length, 1);
@@ -154,4 +154,81 @@ test('rejects executable schemes, cleartext and embedded credentials', () => {
     assert.equal(isSecureAudioUrl(value), false);
   }
   assert.equal(isSecureAudioUrl(radio), true);
+});
+
+test('stop cancels delayed signed URL resolution', async t => {
+  const { controller, elements } = setup(t);
+  let resolve!: (url: string) => void;
+  controller.playRecording(recording, () => new Promise(done => { resolve = done; }));
+  controller.stopTrack();
+  resolve(recording.audio_url);
+  await flush();
+  assert.equal(elements.length, 0);
+  assert.equal(controller.getSnapshot().currentTrack, null);
+});
+
+test('a newer recording wins over a slower earlier URL resolution', async t => {
+  const { controller, elements } = setup(t);
+  let resolve!: (url: string) => void;
+  controller.playRecording(recording, () => new Promise(done => { resolve = done; }));
+  controller.playRecording({ ...recording, id: 'new' }, () => Promise.resolve('https://example.com/new.mp3'));
+  await flush();
+  resolve(recording.audio_url);
+  await flush();
+  assert.equal(elements.length, 1);
+  assert.equal(controller.getSnapshot().currentTrack?.id, 'new');
+});
+
+test('completion refreshes station before choosing the next source', async t => {
+  const { controller, elements } = setup(t);
+  let current: StationSelection | null = null;
+  let finishRefresh!: () => void;
+  controller.setStationResolver(() => current);
+  controller.setStationRefresh(() => new Promise(done => { finishRefresh = done; }));
+  controller.playTrack(recording);
+  elements[0].emit('ended');
+  assert.equal(elements.length, 1);
+  current = { track: { ...recording, id: 'next' }, occurrenceId: 'next-airing' };
+  finishRefresh();
+  await flush();
+  assert.equal(elements.length, 2);
+  assert.equal(controller.getSnapshot().currentTrack?.id, 'next');
+});
+
+test('stop during station refresh cannot restart playback', async t => {
+  const { controller, elements } = setup(t);
+  let finishRefresh!: () => void;
+  controller.setStationRefresh(() => new Promise(done => { finishRefresh = done; }));
+  controller.playTrack(recording);
+  elements[0].emit('ended');
+  controller.stopTrack();
+  finishRefresh();
+  await flush();
+  assert.equal(elements.length, 1);
+  assert.equal(controller.getSnapshot().isPlaying, false);
+});
+
+test('a stalled signed URL request falls back to radio after the deadline', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { controller, elements } = setup(t);
+  controller.playRecording(recording, () => new Promise(() => undefined));
+  t.mock.timers.tick(20_001);
+  await flush();
+  assert.equal(elements.length, 1);
+  assert.equal(controller.getSnapshot().currentTrack?.audio_url, radio);
+  assert.equal(controller.getSnapshot().isPlaying, true);
+});
+
+test('a stalled station refresh after completion cannot leave the player stuck', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { controller, elements } = setup(t);
+  controller.setStationRefresh(() => new Promise(() => undefined));
+  controller.playTrack(recording);
+  await flush();
+  elements[0].emit('ended');
+  t.mock.timers.tick(20_001);
+  await flush();
+  assert.equal(elements.length, 2);
+  assert.equal(controller.getSnapshot().currentTrack?.audio_url, radio);
+  assert.equal(controller.getSnapshot().isPlaying, true);
 });
