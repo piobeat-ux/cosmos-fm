@@ -1,14 +1,5 @@
 import { Radio, Headphones, Users, Calendar, Info } from 'lucide-react';
 
-const COLORS = {
-  neppy: '#28B9D0',
-  purple: '#685096',
-  green: '#AFCB31',
-  white: '#FFFFFF',
-  text: '#1A2B3C',
-  textMuted: '#4A6578',
-};
-
 const navItems = [
   { id: 'home', label: 'Эфир', icon: Radio },
   { id: 'podcasts', label: 'Подкасты', icon: Headphones },

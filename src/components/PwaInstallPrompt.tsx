@@ -1,31 +1,33 @@
 import { useState, useEffect } from 'react';
 import { Download, X } from 'lucide-react';
 
+interface InstallPrompt extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export function PwaInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<InstallPrompt | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as InstallPrompt);
       // Показываем промпт через 5 секунд после загрузки
-      setTimeout(() => setShowPrompt(true), 5000);
+      timer = setTimeout(() => setShowPrompt(true), 5000);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => { clearTimeout(timer); window.removeEventListener('beforeinstallprompt', handleBeforeInstall); };
   }, []);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      console.log('User accepted PWA install');
-    }
-    setDeferredPrompt(null);
-    setShowPrompt(false);
+    try { await deferredPrompt.prompt(); await deferredPrompt.userChoice; }
+    catch { /* Browser dismissed or expired the installation request. */ }
+    finally { setDeferredPrompt(null); setShowPrompt(false); }
   };
 
   if (!showPrompt || !deferredPrompt) return null;

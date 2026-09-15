@@ -1,4 +1,4 @@
-import { Calendar, Users, Headphones, Tag, Plus } from 'lucide-react';
+import { Calendar, Users, Headphones, Tag } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 
 const COLORS = {

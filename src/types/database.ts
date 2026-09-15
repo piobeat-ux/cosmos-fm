@@ -1,5 +1,9 @@
 export interface Show {
   id: string;
+  asset_id?: string;
+  published?: boolean;
+  catalog_mode?: 'immediate' | 'after_airing';
+  catalog_visible_at?: string;
   title: string;
   description?: string;
   host_name?: string;
@@ -29,6 +33,10 @@ export interface Host {
 
 export interface Podcast {
   id: string;
+  asset_id?: string;
+  published?: boolean;
+  catalog_mode?: 'immediate' | 'after_airing';
+  catalog_visible_at?: string;
   title: string;
   description?: string;
   host_name?: string;
@@ -45,6 +53,8 @@ export interface Podcast {
 export interface Category {
   id: string;
   name: string;
+  icon?: string;
+  description?: string;
   count?: number;
   color?: string;
   created_at?: string;

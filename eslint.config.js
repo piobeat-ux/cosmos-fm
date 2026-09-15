@@ -12,12 +12,18 @@ export default defineConfig([
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
-      reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+    },
+    plugins: { 'react-hooks': reactHooks },
+    rules: {
+      // React 18 without the React Compiler: enforce runtime hook correctness.
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error',
+      'react-refresh/only-export-components': ['error', { allowConstantExport: true, allowExportNames: ['useAudio', 'useAuth', 'useData'] }],
     },
   },
 ])

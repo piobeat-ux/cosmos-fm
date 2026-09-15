@@ -1,304 +1,132 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
+import { DEFAULT_SETTINGS, type Show, type Host, type Podcast, type Category, type Hotel, type SiteSettings } from '@/types/database';
 
-interface DataContextType {
-  shows: any[];
-  hosts: any[];
-  podcasts: any[];
-  categories: any[];
-  hotels: any[];
-  navigation: any[];
-  settings: any;
+interface NavigationLink {
+  id: string;
+  label: string;
+  url: string;
+  type: string;
+  is_active: boolean;
+  order_index: number;
+}
+interface ResourceRows {
+  shows: Show;
+  hosts: Host;
+  podcasts: Podcast;
+  categories: Category;
+  hotels: Hotel;
+  navigation_links: NavigationLink;
+}
+type Resource = keyof ResourceRows;
+type Snapshot = { [K in Resource]: ResourceRows[K][] } & { settings: SiteSettings };
+type Input = Record<string, unknown>;
+type Crud = { [K in `add${'Show' | 'Host' | 'Podcast' | 'Category' | 'Hotel' | 'NavigationLink'}`]: (data: Input) => Promise<void> }
+  & { [K in `edit${'Show' | 'Host' | 'Podcast' | 'Category' | 'Hotel' | 'NavigationLink'}`]: (id: string, data: Input) => Promise<void> }
+  & { [K in `remove${'Show' | 'Host' | 'Podcast' | 'Category' | 'Hotel' | 'NavigationLink'}`]: (id: string) => Promise<void> };
+type DataContextType = Omit<Snapshot, 'navigation_links'> & Crud & {
+  navigation: NavigationLink[];
   loading: boolean;
   error: string | null;
   version: number;
-  addShow: (data: any) => Promise<void>;
-  editShow: (id: string, data: any) => Promise<void>;
-  removeShow: (id: string) => Promise<void>;
-  addHost: (data: any) => Promise<void>;
-  editHost: (id: string, data: any) => Promise<void>;
-  removeHost: (id: string) => Promise<void>;
-  addPodcast: (data: any) => Promise<void>;
-  editPodcast: (id: string, data: any) => Promise<void>;
-  removePodcast: (id: string) => Promise<void>;
-  addCategory: (data: any) => Promise<void>;
-  editCategory: (id: string, data: any) => Promise<void>;
-  removeCategory: (id: string) => Promise<void>;
-  addHotel: (data: any) => Promise<void>;
-  editHotel: (id: string, data: any) => Promise<void>;
-  removeHotel: (id: string) => Promise<void>;
-  addNavigationLink: (data: any) => Promise<void>;
-  editNavigationLink: (id: string, data: any) => Promise<void>;
-  removeNavigationLink: (id: string) => Promise<void>;
-  updateSettings: (settings: any) => Promise<void>;
-}
-
-const DataContext = createContext<DataContextType | undefined>(undefined);
-
-const FALLBACK_DATA = {
-  shows: [
-    { id: '1', title: 'Morning Show', description: 'Good morning', host_name: 'Host', time: '08:00', day_of_week: 'Mon', is_live: true, duration: '2h' }
-  ],
-  hosts: [
-    { id: '1', name: 'Host Name', role: 'Host', bio: 'Bio' }
-  ],
-  podcasts: [
-    { id: '1', title: 'Podcast', description: 'Description', host_name: 'Host', episodes: 10, duration: '45 min' }
-  ],
-  categories: [
-    { id: '1', name: 'Music', description: 'Music' }
-  ],
-  hotels: [
-    { id: '1', name: 'Hotel', city: 'Moscow' }
-  ],
-  navigation: [
-    { id: '1', label: 'Home', url: '#/home', order_index: 1, is_active: true },
-    { id: '2', label: 'Schedule', url: '#/schedule', order_index: 2, is_active: true },
-    { id: '3', label: 'Hosts', url: '#/hosts', order_index: 3, is_active: true },
-    { id: '4', label: 'Podcasts', url: '#/podcasts', order_index: 4, is_active: true },
-    { id: '5', label: 'About', url: '#/about', order_index: 5, is_active: true }
-  ],
-  settings: {
-    site_name: 'Cosmos FM',
-    hero_title: 'Radio',
-    hero_subtitle: 'Subtitle',
-    stream_url: 'https://stream.example.com/live'
-  }
+  refresh: () => Promise<void>;
+  updateSettings: (settings: SiteSettings) => Promise<void>;
 };
 
+const emptySnapshot = (): Snapshot => ({ shows: [], hosts: [], podcasts: [], categories: [], hotels: [], navigation_links: [], settings: { ...DEFAULT_SETTINGS } });
+const DataContext = createContext<DataContextType | undefined>(undefined);
+
+async function readAll<K extends Resource>(table: K, signal: AbortSignal): Promise<ResourceRows[K][]> {
+  const rows: ResourceRows[K][] = [];
+  for (let start = 0; ; start += 500) {
+    const { data, error } = await supabase.from(table).select('*').order('id').range(start, start + 499).abortSignal(signal);
+    if (error) throw error;
+    rows.push(...(data as ResourceRows[K][]));
+    if (data.length < 500) return rows;
+  }
+}
+
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [shows, setShows] = useState(FALLBACK_DATA.shows);
-  const [hosts, setHosts] = useState(FALLBACK_DATA.hosts);
-  const [podcasts, setPodcasts] = useState(FALLBACK_DATA.podcasts);
-  const [categories, setCategories] = useState(FALLBACK_DATA.categories);
-  const [hotels, setHotels] = useState(FALLBACK_DATA.hotels);
-  const [navigation, setNavigation] = useState(FALLBACK_DATA.navigation);
-  const [settings, setSettings] = useState(FALLBACK_DATA.settings);
+  const { isAdmin } = useAuth();
+  const [snapshot, setSnapshot] = useState(emptySnapshot);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
+  const request = useRef<AbortController | null>(null);
 
-  const loadData = async () => {
+  const refresh = useCallback(async () => {
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
     try {
-      console.log('Loading data from Supabase...');
-      
-      const timeoutId = setTimeout(() => {
-        console.warn('Timeout (15s), using fallback');
-        setLoading(false);
-      }, 15000);
-
-      const [
-        showsRes,
-        hostsRes,
-        podcastsRes,
-        categoriesRes,
-        hotelsRes,
-        navigationRes,
-        settingsRes
-      ] = await Promise.allSettled([
-        supabase.from('shows').select('*').order('time'),
-        supabase.from('hosts').select('*'),
-        supabase.from('podcasts').select('*'),
-        supabase.from('categories').select('*'),
-        supabase.from('hotels').select('*'),
-        supabase.from('navigation_links').select('*').order('order_index', { ascending: true }),
-        supabase.from('site_settings').select('*')
+      const [shows, hosts, podcasts, categories, hotels, navigation_links, settingsResult] = await Promise.all([
+        readAll('shows', controller.signal), readAll('hosts', controller.signal),
+        readAll('podcasts', controller.signal), readAll('categories', controller.signal),
+        readAll('hotels', controller.signal), readAll('navigation_links', controller.signal),
+        supabase.from('site_settings').select('key,value').abortSignal(controller.signal),
       ]);
-
-      const getData = (result: any, fallback: any[]) => {
-        if (result.status === 'fulfilled' && result.value.data) {
-          console.log('Loaded:', result.value.data.length, 'items');
-          return result.value.data;
-        }
-        console.warn('Using fallback');
-        return fallback;
-      };
-
-      setShows(getData(showsRes, FALLBACK_DATA.shows));
-      setHosts(getData(hostsRes, FALLBACK_DATA.hosts));
-      setPodcasts(getData(podcastsRes, FALLBACK_DATA.podcasts));
-      setCategories(getData(categoriesRes, FALLBACK_DATA.categories));
-      setHotels(getData(hotelsRes, FALLBACK_DATA.hotels));
-      setNavigation(getData(navigationRes, FALLBACK_DATA.navigation));
-      
-      const settingsData = getData(settingsRes, []);
-      if (Array.isArray(settingsData) && settingsData.length > 0) {
-        const settingsObj: any = {};
-        settingsData.forEach((item: any) => {
-          if (item && item.key) {
-            settingsObj[item.key] = item.value;
-          }
-        });
-        setSettings({ ...FALLBACK_DATA.settings, ...settingsObj });
+      if (settingsResult.error) throw settingsResult.error;
+      if (controller.signal.aborted) return;
+      const settings: SiteSettings = { ...DEFAULT_SETTINGS };
+      for (const item of settingsResult.data || []) {
+        if (typeof item.key === 'string' && typeof item.value === 'string' && !['__proto__', 'constructor', 'prototype'].includes(item.key)) settings[item.key] = item.value;
       }
-
-      clearTimeout(timeoutId);
-      setLoading(false);
-      setVersion(v => v + 1);
-      console.log('Data loaded!');
-      
-    } catch (err: any) {
-      console.error('Error:', err);
-      setLoading(false);
+      setSnapshot({ shows, hosts, podcasts, categories, hotels, navigation_links: [...navigation_links].sort((a, b) => a.order_index - b.order_index), settings });
+      setError(null);
+      setVersion(value => value + 1);
+    } catch {
+      if (!controller.signal.aborted) setError('Не удалось загрузить данные радиостанции. Проверьте соединение и повторите попытку.');
+    } finally {
+      if (!controller.signal.aborted) setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadData();
   }, []);
 
-  // CRUD functions
-  const addShow = async (data: any) => {
-    const { error } = await supabase.from('shows').insert([data]);
-    if (error) throw error;
-    await loadData();
+  useEffect(() => {
+    setSnapshot(emptySnapshot());
+    setLoading(true);
+    void refresh();
+    return () => request.current?.abort();
+  }, [isAdmin, refresh]);
+
+  const mutate = async (table: Resource, action: 'insert' | 'update' | 'delete', data?: Input, id?: string) => {
+    const query = action === 'insert' ? supabase.from(table).insert(data)
+      : action === 'update' ? supabase.from(table).update(data).eq('id', id)
+      : supabase.from(table).delete().eq('id', id);
+    const { data: changed, error: mutationError } = await query.select('id');
+    if (mutationError) throw new Error('Не удалось сохранить изменение. Проверьте права доступа и введённые данные.');
+    if (!changed?.length) throw new Error('Запись уже удалена или недоступна для изменения.');
+    await refresh();
   };
 
-  const editShow = async (id: string, data: any) => {
-    const { error } = await supabase.from('shows').update(data).eq('id', id);
-    if (error) throw error;
-    await loadData();
+  const crud = <K extends Resource>(table: K) => ({
+    add: (data: Input) => mutate(table, 'insert', data),
+    edit: (id: string, data: Input) => mutate(table, 'update', data, id),
+    remove: (id: string) => mutate(table, 'delete', undefined, id),
+  });
+  const shows = crud('shows'), hosts = crud('hosts'), podcasts = crud('podcasts');
+  const categories = crud('categories'), hotels = crud('hotels'), navigation = crud('navigation_links');
+
+  const updateSettings = async (settings: SiteSettings) => {
+    const rows = Object.entries(settings).map(([key, value]) => {
+      if (!/^[a-z][a-z0-9_]{0,63}$/.test(key) || typeof value !== 'string' || value.length > 50_000) throw new Error('Проверьте значения настроек.');
+      return { key, value };
+    });
+    if (!rows.length) return;
+    const { error: saveError } = await supabase.from('site_settings').upsert(rows, { onConflict: 'key' });
+    if (saveError) throw new Error('Не удалось сохранить настройки. Повторите попытку.');
+    await refresh();
   };
 
-  const removeShow = async (id: string) => {
-    const { error } = await supabase.from('shows').delete().eq('id', id);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const addHost = async (data: any) => {
-    const { error } = await supabase.from('hosts').insert([data]);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const editHost = async (id: string, data: any) => {
-    const { error } = await supabase.from('hosts').update(data).eq('id', id);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const removeHost = async (id: string) => {
-    const { error } = await supabase.from('hosts').delete().eq('id', id);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const addPodcast = async (data: any) => {
-    const { error } = await supabase.from('podcasts').insert([data]);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const editPodcast = async (id: string, data: any) => {
-    const { error } = await supabase.from('podcasts').update(data).eq('id', id);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const removePodcast = async (id: string) => {
-    const { error } = await supabase.from('podcasts').delete().eq('id', id);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const addCategory = async (data: any) => {
-    const { error } = await supabase.from('categories').insert([data]);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const editCategory = async (id: string, data: any) => {
-    const { error } = await supabase.from('categories').update(data).eq('id', id);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const removeCategory = async (id: string) => {
-    const { error } = await supabase.from('categories').delete().eq('id', id);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const addHotel = async (data: any) => {
-    const { error } = await supabase.from('hotels').insert([data]);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const editHotel = async (id: string, data: any) => {
-    const { error } = await supabase.from('hotels').update(data).eq('id', id);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const removeHotel = async (id: string) => {
-    const { error } = await supabase.from('hotels').delete().eq('id', id);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const addNavigationLink = async (data: any) => {
-    const { error } = await supabase.from('navigation_links').insert([data]);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const editNavigationLink = async (id: string, data: any) => {
-    const { error } = await supabase.from('navigation_links').update(data).eq('id', id);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const removeNavigationLink = async (id: string) => {
-    const { error } = await supabase.from('navigation_links').delete().eq('id', id);
-    if (error) throw error;
-    await loadData();
-  };
-
-  const updateSettings = async (newSettings: any) => {
-    const updates = Object.entries(newSettings).map(([key, value]) =>
-      supabase.from('site_settings').upsert({ key, value }, { onConflict: 'key' })
-    );
-    await Promise.all(updates);
-    await loadData();
-  };
-
-  return (
-    <DataContext.Provider value={{
-      shows,
-      hosts,
-      podcasts,
-      categories,
-      hotels,
-      navigation,
-      settings,
-      loading,
-      error,
-      version,
-      addShow,
-      editShow,
-      removeShow,
-      addHost,
-      editHost,
-      removeHost,
-      addPodcast,
-      editPodcast,
-      removePodcast,
-      addCategory,
-      editCategory,
-      removeCategory,
-      addHotel,
-      editHotel,
-      removeHotel,
-      addNavigationLink,
-      editNavigationLink,
-      removeNavigationLink,
-      updateSettings,
-    }}>
-      {children}
-    </DataContext.Provider>
-  );
+  return <DataContext.Provider value={{
+    ...snapshot, navigation: snapshot.navigation_links, loading, error, version, refresh, updateSettings,
+    addShow: shows.add, editShow: shows.edit, removeShow: shows.remove,
+    addHost: hosts.add, editHost: hosts.edit, removeHost: hosts.remove,
+    addPodcast: podcasts.add, editPodcast: podcasts.edit, removePodcast: podcasts.remove,
+    addCategory: categories.add, editCategory: categories.edit, removeCategory: categories.remove,
+    addHotel: hotels.add, editHotel: hotels.edit, removeHotel: hotels.remove,
+    addNavigationLink: navigation.add, editNavigationLink: navigation.edit, removeNavigationLink: navigation.remove,
+  }}>{children}</DataContext.Provider>;
 }
 
 export function useData() {

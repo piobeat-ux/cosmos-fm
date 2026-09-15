@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Radio, Image, Type, Mail, Phone, MapPin, Instagram, Youtube, Music2, Save, RotateCcw, HelpCircle, FileText } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Radio, Image, Type, Mail, Phone, MapPin, Camera as Instagram, Video as Youtube, Music2, Save, RotateCcw, HelpCircle, FileText } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { ImageUpload } from '@/admin/components/ImageUpload';
 
@@ -7,19 +7,30 @@ export function SettingsPage() {
   const { settings, updateSettings } = useData();
   const [form, setForm] = useState({ ...settings });
   const [saved, setSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => { if (!dirty) setForm({ ...settings }); }, [settings, dirty]);
 
   const handleChange = (field, value) => {
+    setDirty(true);
     setForm(prev => ({ ...prev, [field]: value }));
     setSaved(false);
   };
 
   const handleSave = async () => {
-    await updateSettings(form);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    if (saving) return;
+    setSaving(true);
+    setError('');
+    try { await updateSettings(form); setSaved(true); setDirty(false); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Не удалось сохранить настройки.'); }
+    finally { setSaving(false); }
   };
 
   const handleReset = () => {
+    setDirty(false);
+    setError('');
     setForm({ ...settings });
     setSaved(false);
   };
@@ -39,17 +50,18 @@ export function SettingsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Настройки сайта</h1>
         <div className="flex gap-3">
-          <button onClick={handleReset} className="btn-secondary flex items-center gap-2">
+          <button onClick={handleReset} disabled={saving} className="btn-secondary flex items-center gap-2">
             <RotateCcw className="w-4 h-4" />
             Сбросить
           </button>
-          <button onClick={handleSave} className="btn-primary flex items-center gap-2">
+          <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2">
             <Save className="w-4 h-4" />
-            {saved ? 'Сохранено!' : 'Сохранить'}
+            {saving ? 'Сохранение…' : saved ? 'Сохранено!' : 'Сохранить'}
           </button>
         </div>
       </div>
 
+      {error && <p role="alert" className="text-red-700">{error}</p>}
       {saved && (
         <div className="p-4 rounded-xl bg-[#22c55e]/10 border border-[#22c55e]/20 text-[#22c55e]">
           Настройки успешно сохранены! Обновите главную страницу, чтобы увидеть изменения.

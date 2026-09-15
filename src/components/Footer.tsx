@@ -1,5 +1,6 @@
-import { Radio, Heart, Instagram, Youtube, Music2, Mail, Phone, MapPin, FileText } from 'lucide-react';
+import { Radio, Heart, Camera as Instagram, Video as Youtube, Music2, Mail, Phone, MapPin, FileText } from 'lucide-react';
 import { useData } from '@/context/DataContext';
+import { safeHttpsUrl } from '@/lib/content-validation';
 
 const COLORS = {
   neppy: '#28B9D0',
@@ -17,13 +18,13 @@ export function Footer() {
     { icon: Instagram, url: settings.social_instagram, label: 'Instagram' },
     { icon: Youtube, url: settings.social_youtube, label: 'YouTube' },
     { icon: Music2, url: settings.social_tiktok, label: 'TikTok' },
-  ].filter(s => s.url);
+  ].filter(s => safeHttpsUrl(s.url));
 
   const documents = [
     { title: settings.doc1_title || 'Политика конфиденциальности', url: settings.doc1_url },
     { title: settings.doc2_title || 'Пользовательское соглашение', url: settings.doc2_url },
     { title: settings.doc3_title || 'Cookies', url: settings.doc3_url },
-  ].filter(d => d.url);
+  ].filter(d => safeHttpsUrl(d.url));
 
   return (
     <footer className="relative z-10 py-12 px-4 sm:px-6 lg:px-8" style={{ background: COLORS.white + 'F0', backdropFilter: 'blur(20px)' }}>
@@ -56,6 +57,7 @@ export function Footer() {
                     <a
                       key={i}
                       href={social.url}
+                      aria-label={social.label}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:scale-110"

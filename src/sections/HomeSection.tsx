@@ -14,8 +14,8 @@ const COLORS = {
 };
 
 export function HomeSection({ onTabChange }) {
-  const { shows, settings, version } = useData();
-  const { playLiveStream, playTrack, isPlaying, isLoading } = useAudio();
+  const { settings, version } = useData();
+  const { playLiveStream, isPlaying, isLoading, error: audioError } = useAudio();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [localNeppyImage, setLocalNeppyImage] = useState('');
@@ -69,21 +69,8 @@ export function HomeSection({ onTabChange }) {
     }
   }, [settings, version]);
 
-  const liveShow = shows.find(show => show.is_live);
-
   const handlePlayClick = () => {
-    if (liveShow?.audio_url) {
-      playTrack({
-        id: liveShow.id,
-        title: liveShow.title,
-        artist: liveShow.host_name,
-        audio_url: liveShow.audio_url,
-        isLive: true,
-        type: 'show',
-      });
-    } else if (settings.stream_url) {
-      playLiveStream(settings.stream_url, settings.site_title || 'Cosmos FM');
-    }
+    playLiveStream(settings.stream_url || '', settings.site_title || 'Cosmos FM');
   };
 
   const hasValidImage = localNeppyImage && localNeppyImage.trim() !== '' && !imageError && imageLoaded;
@@ -245,8 +232,10 @@ export function HomeSection({ onTabChange }) {
               </div>
 
               <div className="flex-shrink-0 md:-mt-0 -mt-4">
+                {audioError && <p role="status" className="max-w-48 mb-3 text-sm text-red-800">{audioError}</p>}
                 <button 
                   className="relative group"
+                  aria-label={isPlaying || isLoading ? 'Пауза эфира' : 'Слушать эфир'}
                   onClick={(e) => { 
                     e.stopPropagation(); 
                     e.preventDefault();

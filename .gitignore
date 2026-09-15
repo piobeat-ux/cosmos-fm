@@ -5,8 +5,11 @@ dist
 .env.production.local
 *.log
 .DS_Store
+supabase/.temp/
 *.backup*
 *.sql
+!supabase/migrations/*.sql
+!tests/fixtures/*.sql
 fix-*.js
 test-*.js
 TESTING.md

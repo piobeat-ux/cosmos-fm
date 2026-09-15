@@ -1,16 +1,16 @@
-import { useState } from 'react';
 import { Play, Pause, Headphones } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { useAudio } from '@/context/AudioContext';
+import { resolveAudio } from '@/lib/media';
+import type { Podcast } from '@/types/database';
 
 export function PodcastsSection() {
-  const { podcasts } = useData();
-  const { playTrack, currentTrack, isPlaying } = useAudio();
+  const { podcasts: allPodcasts } = useData();
+  const podcasts = allPodcasts.filter(row => row.published !== false && (row.catalog_mode !== 'after_airing' || (row.catalog_visible_at && Date.parse(row.catalog_visible_at) <= Date.now())));
+  const { playRecording, currentTrack, isPlaying } = useAudio();
 
-  const handlePlay = (podcast) => {
-    if (podcast.audio_url) {
-      playTrack({ id: podcast.id, title: podcast.title, artist: podcast.host_name, audio_url: podcast.audio_url, cover_url: podcast.cover_url, isLive: false, type: 'podcast' });
-    }
+  const handlePlay = (podcast: Podcast) => {
+    playRecording({ id: podcast.id, title: podcast.title, artist: podcast.host_name, audio_url: podcast.audio_url || '', cover_url: podcast.cover_url, isLive: false, type: 'podcast' }, () => podcast.asset_id ? resolveAudio(podcast.asset_id) : Promise.resolve(podcast.audio_url || ''));
   };
 
   return (
@@ -24,8 +24,8 @@ export function PodcastsSection() {
           {podcasts.map(podcast => (
             <div key={podcast.id} className="bg-white rounded-3xl overflow-hidden shadow-xl shadow-blue-100/50 hover:shadow-2xl transition-all hover:-translate-y-2 group">
               <div className="relative h-48 bg-gradient-to-br from-[#4DD0E1] to-[#7C5FBF] overflow-hidden">
-                {podcast.cover_url ? <img src={podcast.cover_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Headphones className="w-16 h-16 text-white/30" /></div>}
-                <button onClick={() => handlePlay(podcast)} className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+                {podcast.cover_url ? <img src={podcast.cover_url} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Headphones className="w-16 h-16 text-white/30" /></div>}
+                <button aria-label={`Слушать: ${podcast.title}`} onClick={() => handlePlay(podcast)} className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 focus-visible:bg-black/40 transition-colors">
                   <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg">
                     {isPlaying && currentTrack?.id === podcast.id ? <Pause className="w-8 h-8 text-[#7C5FBF]" /> : <Play className="w-8 h-8 text-[#7C5FBF] ml-1" />}
                   </div>
