@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useData } from '@/context/DataContext';
 import { AudioUpload } from '@/admin/components/AudioUpload';
 import { ImageUpload } from '@/admin/components/ImageUpload';
+import { AdminDialog } from '@/admin/components/AdminDialog';
 import { supabase } from '@/lib/supabase';
 import { stationInput, stationIso } from '@/lib/schedule';
 import type { Show, Podcast } from '@/types/database';
@@ -71,7 +72,7 @@ export function MediaLibraryPage({ kind }: { kind: 'show' | 'podcast' }) {
   };
 
   return <div className="space-y-5">
-    <div className="flex flex-wrap justify-between items-center gap-3"><h1 className="text-2xl font-bold">{kind === 'show' ? 'Передачи' : 'Подкасты'} <span className="text-sm text-[#4A6578]">({rows.length})</span></h1><button onClick={() => edit()} className="btn-primary">Добавить запись</button></div>
+    <div className="flex flex-wrap justify-between items-center gap-3"><h1 className="text-2xl font-bold">{kind === 'show' ? 'Передачи' : 'Подкасты'} <span className="text-sm text-[#4A6578]">({rows.length})</span></h1><button id={`open-media-${kind}`} onClick={() => edit()} className="btn-primary">Добавить запись</button></div>
     <a href="#/admin/calendar" className="inline-block text-[#685096] underline">Открыть календарь эфиров</a>
     {error && !open && <p role="alert" className="text-red-700">{error}</p>}
     {!rows.length && <p className="py-8 text-[#4A6578]">Записи пока не добавлены.</p>}
@@ -82,9 +83,10 @@ export function MediaLibraryPage({ kind }: { kind: 'show' | 'podcast' }) {
       <p className="text-xs text-[#685096]">{record.published === false ? 'Черновик' : record.catalog_mode === 'after_airing' && (!record.catalog_visible_at || Date.parse(record.catalog_visible_at) > Date.now()) ? 'В каталоге после первого эфира' : 'Доступно в каталоге'}</p>
       <div className="flex gap-4"><button onClick={() => edit(record)} className="text-[#685096] underline">Изменить</button><button onClick={() => void remove(record)} disabled={busy} className="text-red-700 underline">Удалить</button></div>
     </article>)}</div>
-    {open && <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4 flex items-start justify-center">
-      <form onSubmit={save} role="dialog" aria-modal="true" aria-labelledby="media-title" className="my-8 w-full max-w-2xl rounded-2xl bg-white p-6 space-y-4">
+    {open && <AdminDialog labelledBy="media-title" returnFocusId={`open-media-${kind}`} busy={busy} onDismiss={() => setOpen(false)} wide>
+      <form onSubmit={save} className="p-6 space-y-4">
         <h2 id="media-title" className="text-xl font-bold">{editing ? 'Редактировать запись' : 'Новая запись'}</h2>
+        <fieldset disabled={busy} className="space-y-4">
         <label className="block">Название<input required maxLength={300} value={form.title} onChange={event => setForm({ ...form, title: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label>
         <label className="block">Описание<textarea maxLength={10000} rows={3} value={form.description} onChange={event => setForm({ ...form, description: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label>
         <div className="grid gap-4 sm:grid-cols-2"><label>Ведущий<input maxLength={200} value={form.host_name} onChange={event => setForm({ ...form, host_name: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /></label><label>Категория<input list="media-categories" value={form.category} onChange={event => setForm({ ...form, category: event.target.value })} className="mt-1 w-full rounded-lg border p-2" /><datalist id="media-categories">{categories.map(category => <option key={category.id} value={category.name} />)}</datalist></label></div>
@@ -94,9 +96,10 @@ export function MediaLibraryPage({ kind }: { kind: 'show' | 'podcast' }) {
         <label className="flex gap-2"><input type="checkbox" checked={scheduled} onChange={event => setScheduled(event.target.checked)} /> Назначить {editing ? 'дополнительный ' : ''}эфир сейчас</label>
         {scheduled ? <div className="rounded-xl bg-[#F5FBFD] p-4 space-y-3"><label className="block">Дата и время по Москве<input type="datetime-local" required value={start} onInput={event => setStart(event.currentTarget.value)} onChange={event => setStart(event.target.value)} className="mt-1 w-full rounded-lg border p-2" /></label><label className="flex gap-2"><input type="checkbox" checked={weekly} onChange={event => setWeekly(event.target.checked)} /> Повторять каждую неделю</label><p className="text-sm text-[#4A6578]">{editing ? 'Настройка доступности этой записи в каталоге сохранится.' : 'Новая запись появится в каталоге после первого эфира.'} При сохранении черновика эфир тоже останется черновиком.</p></div>
           : <label className="block">Появление в каталоге<select value={form.catalog_mode} onChange={event => setForm({ ...form, catalog_mode: event.target.value as MediaForm['catalog_mode'] })} className="mt-1 w-full rounded-lg border p-2"><option value="immediate">Сразу после публикации</option><option value="after_airing">После первого эфира</option></select></label>}
+        </fieldset>
         {error && <p role="alert" className="text-red-700">{error}</p>}
         <div className="flex gap-3"><button type="submit" disabled={busy || uploading} className="btn-primary">{busy ? 'Сохранение…' : uploading ? 'Дождитесь загрузки…' : 'Сохранить'}</button><button type="button" onClick={() => setOpen(false)} disabled={busy} className="btn-secondary">Отмена</button></div>
       </form>
-    </div>}
+    </AdminDialog>}
   </div>;
 }

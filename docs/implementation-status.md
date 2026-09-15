@@ -43,7 +43,7 @@ Removed obsolete repair/reset scripts and tracked backup source copies (recovera
 Important remaining work before release:
 
 - Verify actual TUS/Auth/Storage and new-record upload-to-airing publication flow against isolated hosted Supabase, not only PGlite. The fixture harness deliberately does not simulate storage.
-- Check drag rescheduling, responsive/mobile interaction, keyboard dialog focus and real mobile audio playback including background/resume. Physical iOS/Android media policies are not proven by desktop tests.
+- Check drag rescheduling, responsive/mobile interaction and real mobile audio playback including background/resume. New calendar/media dialog keyboard focus is verified below. Physical iOS/Android media policies are not proven by desktop tests.
 - Review exact synchronization during metadata loading, first-click readiness and unavailable-source fallback against real audio.
 - Review migration concurrency and security-definer boundaries on hosted PostgreSQL; PGlite tests are not a multi-connection concurrency proof.
 - TypeScript checks run, but the legacy project still has strict=false; do not describe it as fully strict-typed.
@@ -57,3 +57,13 @@ Read-only production checks confirmed no migrations applied and direct default E
 Fixed catalog-mode changes failing to recalculate the already scheduled release date, and replacement audio inheriting a prior recording's after-airing release. Added regression tests for both plus raw-function access and invoker RPC boundaries. All 47 tests pass after these migration-only changes; the preceding full typecheck/lint/build was green, and dependency audit had zero advisories. Hosted Auth/Storage/TUS, migration concurrency and production verification remain unproven.
 
 No remote write or deployment has occurred. Local checkpoints: 5cabed3 (foundation), 3b185a3 (UI verification, hardening and legacy cleanup), followed by the migration-review checkpoint. Preserve all local commits when publishing; origin currently points at a local audit mirror, not GitHub.
+
+## MP3 and dialog review (2026-09-15)
+
+The previous goal turn made concrete progress (commits through 9518b0c), not merely a wait. This continuation rechecked the clean checkout and GitHub installation list; the latter is still empty. No new remote write attempt or production mutation was made.
+
+Extracted pure audio validation from the Supabase adapter and added eight tests against the real music-metadata parser: decimal size boundary, valid MPEG frames, just-under-hour acceptance, over-hour rejection below 50 MB, empty files, renamed text, WAV disguised as MP3, and uppercase MP3 extension. Synthetic MPEG data tests the parser rather than a mocked metadata response; real listening/hosted upload remain separate release gates.
+
+Calendar/media editors now use a native modal with explicit keyboard-cycle and focus-return guards. Browser evidence: initial focus on the first field; Shift+Tab wraps to Cancel inside the modal; Escape closes the calendar and restores Add airing; Cancel restores Add recording in the media editor. Inputs cannot change during database saving. Host image upload now blocks Save and uses a functional state update to avoid overwriting concurrent edits.
+
+Combined typecheck, zero-warning lint, 55 tests and production build passed. Dependencies did not change. GitHub access and the hosted preview/production checks remain required; no claim of completed deployment.

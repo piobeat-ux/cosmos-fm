@@ -1,8 +1,7 @@
 import { supabase } from './supabase';
 import { isSecureAudioUrl } from './audio-controller';
+import { inspectMp3, inspectMp3File, MAX_AUDIO_BYTES } from './audio-validation';
 
-export const MAX_AUDIO_BYTES = 50_000_000;
-export const MAX_AUDIO_SECONDS = 3600;
 export interface MediaAsset {
   id: string;
   storage_path: string | null;
@@ -11,19 +10,9 @@ export interface MediaAsset {
   size_bytes?: number;
 }
 
-async function inspectMp3(blob: Blob) {
-  if (!blob.size || blob.size > MAX_AUDIO_BYTES) throw new Error('Размер MP3 должен быть от 1 байта до 50 МБ.');
-  const { parseBlob } = await import('music-metadata');
-  const metadata = await parseBlob(blob, { duration: true, skipCovers: true });
-  const seconds = metadata.format.duration;
-  if (!metadata.format.codec?.match(/Layer 3/i) || !seconds || !Number.isFinite(seconds)) throw new Error('Не удалось прочитать MP3. Проверьте формат файла.');
-  if (seconds > MAX_AUDIO_SECONDS) throw new Error('Продолжительность передачи — не больше 60 минут.');
-  return { duration_seconds: Math.ceil(seconds), size_bytes: blob.size };
-}
-
 export async function createUploadedAsset(file: File, signal: AbortSignal, onProgress: (percent: number) => void): Promise<MediaAsset> {
-  if (!file.name.toLowerCase().endsWith('.mp3')) throw new Error('Выберите файл в формате MP3.');
-  const details = await inspectMp3(file);
+  signal.throwIfAborted();
+  const details = await inspectMp3File(file);
   signal.throwIfAborted();
   const path = `${crypto.randomUUID()}.mp3`;
   const { Upload } = await import('tus-js-client');

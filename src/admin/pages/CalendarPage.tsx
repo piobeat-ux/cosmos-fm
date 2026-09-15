@@ -6,6 +6,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import ruLocale from '@fullcalendar/core/locales/ru';
 import { supabase } from '@/lib/supabase';
 import { useData } from '@/context/DataContext';
+import { AdminDialog } from '@/admin/components/AdminDialog';
 import { expandSchedule, stationInput, stationIso, type BroadcastSchedule } from '@/lib/schedule';
 
 const MSK = 3 * 3600000;
@@ -87,7 +88,7 @@ export function CalendarPage() {
   });
 
   return <div className="space-y-5">
-    <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-bold">Календарь эфиров</h1><button className="btn-primary" onClick={() => { setEditing(null); setForm(emptyForm()); setError(''); setOpen(true); }}>Добавить эфир</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-bold">Календарь эфиров</h1><button id="open-airing-dialog" className="btn-primary" disabled={busy} onClick={() => { setEditing(null); setForm(emptyForm()); setError(''); setOpen(true); }}>Добавить эфир</button></div>
     <p className="text-sm text-[#4A6578]">Время московское (UTC+03:00). Нажмите на день или перетащите эфир на другое время. Длительность определяется по MP3. Перенос повторяющегося эфира меняет всю серию.</p>
     {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-red-700">{error}</p>}
     {!loaded && <button onClick={() => void load().catch(cause => setError(cause.message))} className="btn-secondary">Обновить календарь</button>}
@@ -109,18 +110,20 @@ export function CalendarPage() {
           }).catch(() => { info.revert(); setError('Не удалось перенести эфир.'); }).finally(() => setBusy(false));
         }} />
     </div>
-    {open && <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 p-4 flex items-start justify-center">
-      <section role="dialog" aria-modal="true" aria-labelledby="airing-title" className="my-8 w-full max-w-lg rounded-2xl bg-white p-6 space-y-4">
+    {open && <AdminDialog labelledBy="airing-title" returnFocusId="open-airing-dialog" busy={busy} onDismiss={() => setOpen(false)}>
+      <form onSubmit={event => { event.preventDefault(); void save(); }} className="p-6 space-y-4">
         <h2 id="airing-title" className="text-xl font-bold">{editing ? 'Изменить эфир' : 'Новый эфир'}</h2>
+        <fieldset disabled={busy} className="space-y-4">
         <label className="block">Запись<select value={form.media} onChange={event => setForm({ ...form, media: event.target.value })} className="mt-1 w-full rounded-lg border p-2"><option value="">Выберите передачу или подкаст</option>{records.map(row => <option key={`${row.kind}:${row.id}`} value={`${row.kind}:${row.id}`} disabled={!row.asset_id}>{row.kind === 'show' ? 'Передача' : 'Подкаст'} · {row.title}{!row.asset_id ? ' (нужна проверка MP3)' : ''}</option>)}</select></label>
         <label className="block">Начало по Москве<input type="datetime-local" value={form.starts_at} onInput={event => { const value = event.currentTarget.value; setForm(current => ({ ...current, starts_at: value })); }} onChange={event => setForm(current => ({ ...current, starts_at: event.target.value }))} className="mt-1 w-full rounded-lg border p-2" /></label>
         <label className="flex gap-2"><input type="checkbox" checked={form.weekly} onChange={event => setForm({ ...form, weekly: event.target.checked })} /> Повторять каждую неделю</label>
         {form.weekly && <label className="block">Последний повтор (необязательно)<input type="datetime-local" value={form.repeat_until} onInput={event => { const value = event.currentTarget.value; setForm(current => ({ ...current, repeat_until: value })); }} onChange={event => setForm(current => ({ ...current, repeat_until: event.target.value }))} className="mt-1 w-full rounded-lg border p-2" /></label>}
         <label className="flex gap-2"><input type="checkbox" checked={form.published} onChange={event => setForm({ ...form, published: event.target.checked })} /> Опубликовать в эфирной сетке</label>
         <p className="text-xs text-[#4A6578]">Черновик не выходит в эфир. Для трансляции сама запись также должна быть опубликована.</p>
+        </fieldset>
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-        <div className="flex flex-wrap gap-3"><button onClick={() => void save()} disabled={busy} className="btn-primary">{busy ? 'Сохранение…' : 'Сохранить'}</button><button onClick={() => setOpen(false)} disabled={busy} className="btn-secondary">Отмена</button>{editing && <button onClick={() => void remove()} disabled={busy} className="text-red-700 underline">Удалить эфир</button>}</div>
-      </section>
-    </div>}
+        <div className="flex flex-wrap gap-3"><button type="submit" disabled={busy} className="btn-primary">{busy ? 'Сохранение…' : 'Сохранить'}</button><button type="button" onClick={() => setOpen(false)} disabled={busy} className="btn-secondary">Отмена</button>{editing && <button type="button" onClick={() => void remove()} disabled={busy} className="text-red-700 underline">Удалить эфир</button>}</div>
+      </form>
+    </AdminDialog>}
   </div>;
 }

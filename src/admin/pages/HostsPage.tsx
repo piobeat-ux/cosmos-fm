@@ -11,10 +11,11 @@ export function HostsPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({ name: '', role: '', hotel: '', bio: '', photo_url: '', color: COLORS[0] });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
 
   const handleSubmit = async () => {
-    if (saving) return;
+    if (saving || uploading) return;
     if (!formData.name) { setMessage('❌ Укажите имя'); return; }
     setSaving(true);
     try {
@@ -36,6 +37,7 @@ export function HostsPage() {
 
   const handleEdit = (item) => {
     if (saving) return;
+    setUploading(false);
     setEditingItem(item);
     setFormData({ name: item.name||'', role: item.role||'', hotel: item.hotel||'', bio: item.bio||'', photo_url: item.photo_url||'', color: item.color||COLORS[0] });
     setIsModalOpen(true);
@@ -46,7 +48,7 @@ export function HostsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold flex items-center gap-2"><User className="w-6 h-6 text-[#6366f1]" /> Ведущие <span className="text-sm text-[#4A6578]">({hosts.length})</span></h1>
-        <button onClick={() => { setEditingItem(null); setFormData({ name: '', role: '', hotel: '', bio: '', photo_url: '', color: COLORS[0] }); setIsModalOpen(true); }} className="btn-primary flex items-center gap-2"><Plus className="w-5 h-5" /> Добавить</button>
+        <button disabled={saving} onClick={() => { setUploading(false); setEditingItem(null); setFormData({ name: '', role: '', hotel: '', bio: '', photo_url: '', color: COLORS[0] }); setIsModalOpen(true); }} className="btn-primary flex items-center gap-2"><Plus className="w-5 h-5" /> Добавить</button>
       </div>
       {message && <div className={`mb-4 p-3 rounded-xl ${message.includes('✅') ? 'bg-[#22c55e]/10 text-[#22c55e]' : 'bg-[#ef4444]/10 text-[#ef4444]'}`}>{message}</div>}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -80,11 +82,11 @@ export function HostsPage() {
               <input placeholder="Роль" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full px-4 py-2 rounded-xl bg-white border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none" />
               <select value={formData.hotel} onChange={e => setFormData({...formData, hotel: e.target.value})} className="w-full px-4 py-2 rounded-xl bg-white border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none"><option value="">Отель</option>{hotels.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}</select>
               <textarea placeholder="Биография" value={formData.bio} onChange={e => setFormData({...formData, bio: e.target.value})} className="w-full px-4 py-2 rounded-xl bg-white border border-[#28B9D040] focus:border-[#6366f1] focus:outline-none" rows={3} />
-              <ImageUpload value={formData.photo_url} onChange={v => setFormData({...formData, photo_url: v})} type="image" label="Фото" />
+              <ImageUpload value={formData.photo_url} onBusyChange={setUploading} onChange={v => setFormData(current => ({...current, photo_url: v}))} type="image" label="Фото" />
               <div className="flex gap-2 flex-wrap">{COLORS.map(c => <button key={c} onClick={() => setFormData({...formData, color: c})} className={`w-10 h-10 rounded-lg bg-gradient-to-br ${c} ${formData.color===c?'ring-2 ring-white ring-offset-2 ring-offset-[#13131f]':''}`} />)}</div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={handleSubmit} disabled={saving} className="flex-1 btn-primary py-3 disabled:opacity-50">{saving ? 'Сохранение...' : 'Сохранить'}</button>
+              <button onClick={handleSubmit} disabled={saving || uploading} className="flex-1 btn-primary py-3 disabled:opacity-50">{saving ? 'Сохранение...' : uploading ? 'Дождитесь загрузки…' : 'Сохранить'}</button>
               <button onClick={() => setIsModalOpen(false)} className="px-6 py-3 rounded-xl bg-[#B6E0EE] hover:bg-[#A0D4E8] text-[#1A2B3C] transition">Отмена</button>
             </div>
           </div>
