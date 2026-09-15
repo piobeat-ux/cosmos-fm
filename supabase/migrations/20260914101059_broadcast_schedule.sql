@@ -67,7 +67,7 @@ language sql immutable security invoker set search_path = '' as $$
     and first_start + n * interval '604800 seconds' + seconds * interval '1 second' > window_start
     and (last_start is null or first_start + n * interval '604800 seconds' <= last_start);
 $$;
-revoke all on function private.airings(timestamptz,integer,boolean,timestamptz,timestamptz,timestamptz) from public;
+revoke all on function private.airings(timestamptz,integer,boolean,timestamptz,timestamptz,timestamptz) from public, anon, authenticated;
 
 create function private.validate_broadcast()
 returns trigger language plpgsql security definer set search_path = '' as $$
@@ -113,8 +113,12 @@ begin
     new.catalog_visible_at := coalesce(new.catalog_visible_at, now());
   elsif tg_op = 'INSERT' then
     new.catalog_visible_at := null;
-  elsif old.catalog_mode <> 'after_airing' then
+  elsif new.asset_id is distinct from old.asset_id then
     new.catalog_visible_at := null;
+  elsif old.catalog_mode <> 'after_airing' then
+    select min(starts_at + duration_seconds * interval '1 second') into new.catalog_visible_at
+      from public.broadcast_schedule where published and
+      ((tg_table_name = 'shows' and show_id = new.id) or (tg_table_name = 'podcasts' and podcast_id = new.id));
   end if;
   return new;
 end;
@@ -176,16 +180,22 @@ begin
   order by a.starts_at;
 end;
 $$;
-revoke all on function private.schedule_window(timestamptz,timestamptz) from public;
+revoke all on function private.schedule_window(timestamptz,timestamptz) from public, anon, authenticated;
 -- The internal window function is not directly callable by browser roles.
 
-create function public.get_schedule(window_start timestamptz, window_end timestamptz)
+create function private.get_public_schedule(window_start timestamptz, window_end timestamptz)
 returns jsonb language sql stable security definer set search_path = '' as $$
   select coalesce(jsonb_agg(jsonb_build_object(
     'schedule_id',schedule_id,'media_id',media_id,'kind',kind,'title',title,'starts_at',starts_at,'ends_at',ends_at
   )), '[]'::jsonb) from private.schedule_window(window_start,window_end);
 $$;
-revoke all on function public.get_schedule(timestamptz,timestamptz) from public;
+revoke all on function private.get_public_schedule(timestamptz,timestamptz) from public, anon, authenticated;
+grant execute on function private.get_public_schedule(timestamptz,timestamptz) to anon, authenticated;
+create function public.get_schedule(window_start timestamptz, window_end timestamptz)
+returns jsonb language sql stable security invoker set search_path = '' as $$
+  select private.get_public_schedule(window_start,window_end);
+$$;
+revoke all on function public.get_schedule(timestamptz,timestamptz) from public, anon, authenticated;
 grant execute on function public.get_schedule(timestamptz,timestamptz) to anon, authenticated;
 
 create function private.asset_is_available(target_id uuid)
@@ -208,7 +218,7 @@ grant execute on function private.storage_audio_available(text) to anon, authent
 create policy available_broadcast_audio on storage.objects for select to anon, authenticated
 using (bucket_id = 'broadcasts' and private.storage_audio_available(name));
 
-create function public.resolve_audio(target_id uuid)
+create function private.resolve_available_audio(target_id uuid)
 returns jsonb language plpgsql stable security definer set search_path = '' as $$
 declare result jsonb;
 begin
@@ -218,10 +228,16 @@ begin
   return result;
 end;
 $$;
-revoke all on function public.resolve_audio(uuid) from public;
+revoke all on function private.resolve_available_audio(uuid) from public, anon, authenticated;
+grant execute on function private.resolve_available_audio(uuid) to anon, authenticated;
+create function public.resolve_audio(target_id uuid)
+returns jsonb language sql stable security invoker set search_path = '' as $$
+  select private.resolve_available_audio(target_id);
+$$;
+revoke all on function public.resolve_audio(uuid) from public, anon, authenticated;
 grant execute on function public.resolve_audio(uuid) to anon, authenticated;
 
-create function public.get_station()
+create function private.get_public_station()
 returns jsonb language sql stable security definer set search_path = '' as $$
   select jsonb_build_object('server_now',now(),'next_start',(
     select min(starts_at) from private.schedule_window(now(),now()+interval '7 days') where starts_at > now()
@@ -232,7 +248,13 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     where starts_at <= now() and ends_at > now() order by starts_at limit 1
   ));
 $$;
-revoke all on function public.get_station() from public;
+revoke all on function private.get_public_station() from public, anon, authenticated;
+grant execute on function private.get_public_station() to anon, authenticated;
+create function public.get_station()
+returns jsonb language sql stable security invoker set search_path = '' as $$
+  select private.get_public_station();
+$$;
+revoke all on function public.get_station() from public, anon, authenticated;
 grant execute on function public.get_station() to anon, authenticated;
 
 -- Save the recording and its optional first airing in one transaction.

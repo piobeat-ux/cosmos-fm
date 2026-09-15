@@ -20,7 +20,7 @@ The authenticated GitHub integration rejected branch creation with HTTP 403 (`Re
 
 ## Remaining release gates
 
-1. Final XHigh review of migrations and release plan; address any findings.
+1. Finish the migration release review against hosted PostgreSQL and the real service boundaries. Local review findings below are addressed.
 2. Restore GitHub connector write access. Latest installation listing still returns no installations; original branch creation returned 403.
 3. Publish through the GitHub connector and verify preview against an isolated hosted Supabase environment, including Auth/Storage/TUS and real audio.
 4. Apply reviewed production migrations, provision the verified administrator, deploy and verify production using XHigh.
@@ -47,5 +47,13 @@ Important remaining work before release:
 - Review exact synchronization during metadata loading, first-click readiness and unavailable-source fallback against real audio.
 - Review migration concurrency and security-definer boundaries on hosted PostgreSQL; PGlite tests are not a multi-connection concurrency proof.
 - TypeScript checks run, but the legacy project still has strict=false; do not describe it as fully strict-typed.
-- Final migration/production review must use the user-requested XHigh setting; the current task cannot claim that switch without a verified model-setting operation.
+- Final production review must use the user-requested XHigh setting. The same-thread follow-up with model gpt-6-astra and thinking xhigh was accepted by the app before the additional migration review below.
 - GitHub connector write access is still unverified after the earlier 403. No remote commit, deployment or production mutation has occurred.
+
+## Additional migration review (2026-09-15)
+
+Read-only production checks confirmed no migrations applied and direct default EXECUTE grants to anon/authenticated in public. The disposable fixture now models those default grants. Public read RPCs are SECURITY INVOKER wrappers around narrowly filtered private helpers; raw internal schedule access is explicitly denied to browser roles.
+
+Fixed catalog-mode changes failing to recalculate the already scheduled release date, and replacement audio inheriting a prior recording's after-airing release. Added regression tests for both plus raw-function access and invoker RPC boundaries. All 47 tests pass after these migration-only changes; the preceding full typecheck/lint/build was green, and dependency audit had zero advisories. Hosted Auth/Storage/TUS, migration concurrency and production verification remain unproven.
+
+No remote write or deployment has occurred. Local checkpoints: 5cabed3 (foundation), 3b185a3 (UI verification, hardening and legacy cleanup), followed by the migration-review checkpoint. Preserve all local commits when publishing; origin currently points at a local audit mirror, not GitHub.

@@ -1,6 +1,9 @@
 -- Minimal disposable model of the audited schema. Contains no production content.
 create role anon;
 create role authenticated;
+-- Match production's direct default grants, not just inherited PUBLIC execute.
+alter default privileges in schema public grant all on tables to anon, authenticated;
+alter default privileges in schema public grant execute on functions to anon, authenticated;
 create schema auth;
 create schema storage;
 grant usage on schema public, auth, storage to anon, authenticated;

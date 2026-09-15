@@ -109,4 +109,27 @@ test('broadcast schedule, publication and protected audio', async t => {
   await t.test('anonymous requests cannot expand an unbounded calendar', async () => {
     await assert.rejects(asAnon("select public.get_schedule(now(),now()+interval '100 years')"), /42/);
   });
+  await t.test('private raw schedule cannot be called directly by browser roles', async () => {
+    await assert.rejects(asAnon("select * from private.schedule_window(now(),now()+interval '1 day')"), /permission denied/);
+  });
+  await t.test('public APIs use invoker privileges and private helpers filter output', async () => {
+    const result = await db.query("select proname,prosecdef from pg_proc where pronamespace='public'::regnamespace and proname in ('get_schedule','get_station','resolve_audio','save_media_record','is_admin')");
+    assert.equal(result.rows.length, 5);
+    assert.ok(result.rows.every(row => row.prosecdef === false));
+  });
+  await t.test('switching catalog mode recalculates the existing airing release time', async () => {
+    const existing = (await db.query<{ id: string }>("insert into public.shows(title,asset_id) values ('Already scheduled',$1) returning id", [asset])).rows[0].id;
+    await db.query("insert into public.broadcast_schedule(show_id,starts_at,duration_seconds,published) values ($1,now()+interval '2 days',600,true)", [existing]);
+    await db.query("update public.shows set catalog_mode='after_airing' where id=$1", [existing]);
+    const release = (await db.query<{ catalog_visible_at: string }>('select catalog_visible_at from public.shows where id=$1', [existing])).rows[0].catalog_visible_at;
+    assert.ok(Date.parse(release) > Date.now());
+    assert.equal((await asAnon('select id from public.shows where id=$1', [existing])).rows.length, 0);
+  });
+  await t.test('replacement audio cannot inherit an old after-airing release', async () => {
+    assert.equal((await asAnon('select id from public.shows where id=$1', [show])).rows.length, 1);
+    const replacement = (await db.query<{ id: string }>("insert into public.media_assets(storage_path,duration_seconds,size_bytes) values ('00000000-0000-4000-8000-000000000011.mp3',300,1000000) returning id")).rows[0].id;
+    await db.query('update public.shows set asset_id=$1 where id=$2', [replacement, show]);
+    assert.equal((await asAnon('select id from public.shows where id=$1', [show])).rows.length, 0);
+    assert.equal((await asAnon('select public.resolve_audio($1) as audio', [replacement])).rows[0].audio, null);
+  });
 });
