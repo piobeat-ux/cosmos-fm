@@ -1,6 +1,8 @@
 import { Play, Pause, X, Loader2 } from 'lucide-react';
 import { useAudio } from '@/context/AudioContext';
 
+const playbackTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+
 export function MiniPlayer() {
   const { currentTrack, isPlaying, isLoading, error, mode, progress, duration, seekTo, startStation, togglePlay, stopTrack } = useAudio();
 
@@ -73,6 +75,10 @@ export function MiniPlayer() {
       </div>
 
       {error && <p role="status" className="px-3 pb-2 text-xs text-red-700">{error}</p>}
+      {!currentTrack.isLive && duration > 0 && <div className="px-3 pb-2">
+        <p aria-label="Время записи" className="text-xs text-[#4A6578]">{playbackTime(progress)} / {playbackTime(duration)}</p>
+        {mode === 'station' && <progress aria-label="Прогресс передачи" value={Math.min(progress, duration)} max={duration} className="h-1 w-full accent-[#685096]" />}
+      </div>}
       {mode === 'manual' && (
         <div className="px-3 pb-3">
           {duration > 0 && <input aria-label="Позиция воспроизведения" type="range" min={0} max={duration} step={1} value={Math.min(progress, duration)} onChange={event => seekTo(Number(event.target.value))} className="w-full" />}

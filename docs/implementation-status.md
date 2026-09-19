@@ -2,7 +2,22 @@
 
 Work branch: `codex/admin-schedule-security`, based on `cac0c0d6d0157edab81101199f9e9c8b837db87e`.
 
-## Current release status (2026-09-15, after GitHub access restored)
+## Current checkpoint (2026-09-19)
+
+This section supersedes older blockers and unverified-test statements below.
+
+- The user explicitly authorized the separate test project `cosmos-fm-new` (`tbgcugeufzlepmixoyoi`). It was restored and verified separate from production `ozchhkjsrstdnowutsow`. Existing test demo content was preserved.
+- Test migration history: `20260915082439 hosted_test_legacy_preparation`, `20260915082503 secure_admin_and_storage`, `20260915082526 broadcast_schedule`. The preparation fixture only aligns missing legacy tables with production; do not apply it to production.
+- `tests/hosted-smoke.mjs` passed ten real-service checks: Auth roles, metadata/profile escalation rejection, private Storage and multi-chunk TUS, MIME/unauthorized-upload rejection, unreleased asset protection, scheduled catalog visibility, atomic conflict rollback, current-airing access, post-airing release, and simultaneous conflicting writes (exactly one succeeds). Test credentials and downloaded audio are ignored under `.release-local/`.
+- Combined TypeScript, zero-warning lint, 55 tests and production build passed on September 19, including the new read-only recording progress display.
+- Browser against the hosted test backend: a real 6.5 MiB MP3 uploaded through the file picker, measured 342 seconds, and saved as a scheduled podcast. No autoplay occurred; after Play the listener joined at 3:17 elapsed for the 19:10 UTC airing at approximately 19:13:17 UTC.
+- At the end of that real recording (19:15:42 UTC), without another click, the player changed from the recording title/progress to Cosmos FM LIVE with Pause available. Real-browser return to the configured radio stream is verified.
+- Opening the public podcast catalog immediately afterward showed the uploaded recording, while radio playback continued.
+- Dragging the identified test event `hosted-check-e59fbec1` from September 19 to September 20 persisted after opening another calendar tab. Both public page and admin calendar had document width 382px within a 390px viewport. This does not prove physical iOS/Android audio behavior.
+- Production migrations remain unapplied. The deployed preview still uses the old production backend and must be switched to the test project before further preview administration. Vercel settings require the user to sign in; the available connector has no environment-variable mutation capability. Do not bypass this with source-code environment overrides.
+- Remaining release gates: hosted preview environment and checks, verified production recovery plan, production migrations/admin provisioning/deploy with XHigh review, then restore temporary connector permissions. The continuation automation was found PAUSED and that status was preserved; its stale test-permission prompt was corrected.
+
+## Earlier release status (2026-09-15, after GitHub access restored)
 
 This section supersedes the historical GitHub-access blocker below.
 
