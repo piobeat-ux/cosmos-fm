@@ -2,6 +2,19 @@
 
 Work branch: `codex/admin-schedule-security`, based on `cac0c0d6d0157edab81101199f9e9c8b837db87e`.
 
+## Current release status (2026-09-15, after GitHub access restored)
+
+This section supersedes the historical GitHub-access blocker below.
+
+- GitHub App installation 161850953 is now available. The user-created branch matched the original baseline.
+- Published all four local checkpoints through the GitHub connector, preserving their order and checking every resulting tree against local Git. Local-to-remote commit mapping: 5cabed3 → 6507c5934f3cc1e9797dc02af6effc928e4a7dfd; 3b185a3 → ee510da56a3a86246e101dfff7aa77cdff294921; 9518b0c → 50afec6119a2a29defc671084f605d0be8359057; 22e38b3 → 776564b665a0079546c22feee8abe77d03c86c93.
+- Draft PR: https://github.com/piobeat-ux/cosmos-fm/pull/1. Main is unchanged. Both push and PR verification checks passed, including the dependency audit.
+- Vercel preview dpl_AVaKfVDDH29rtrHF1qeFBai2FB9f is READY at https://cosmos-qf4arrn44-piobeat-uxs-projects.vercel.app for remote commit 776564b. Browser verified the homepage and four legacy podcast cards. This preview currently reads the existing production backend; no administrative tests were performed there.
+- The first oversized Git tree request was rejected by automatic approval review (200,000-byte review limit). Smaller independently reviewed requests succeeded; each completed tree matched the local checkpoint.
+- Production migrations remain empty. Read-only counts reconfirmed shows 3, podcasts 4, site_settings 28, profiles 2, storage objects 17. No production schema, content or storage mutations were made.
+- Supabase lists only its default main branch; the organization is Free. A separate existing project, cosmos-fm-new (tbgcugeufzlepmixoyoi), is INACTIVE and outside the previously authorized working-project scope. Ask the user whether it may be restored and used for testing; inspect its existing data before making any changes. Do not assume it is empty or disposable.
+- Awaiting this test-environment decision before hosted Auth/Storage/TUS tests and production migration/deployment. A verified database recovery plan and the remaining release checks still need completion. Temporary Supabase/Vercel permissions remain as previously configured and must be restored at completion. Do not mark the goal complete.
+
 ## Accepted behavior
 
 - Start only after the listener presses Play. Station playback joins the current broadcast at its elapsed position, using server time.
