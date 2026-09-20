@@ -15,6 +15,7 @@ This section supersedes older blockers and unverified-test statements below.
 - Opening the public podcast catalog immediately afterward showed the uploaded recording, while radio playback continued.
 - Dragging the identified test event `hosted-check-e59fbec1` from September 19 to September 20 persisted after opening another calendar tab. Both public page and admin calendar had document width 382px within a 390px viewport. This does not prove physical iOS/Android audio behavior.
 - Production migrations remain unapplied. The deployed preview still uses the old production backend and must be switched to the test project before further preview administration. Vercel settings require the user to sign in; the available connector has no environment-variable mutation capability. Do not bypass this with source-code environment overrides.
+- On September 20, Vercel preview-branch overrides for `codex/admin-schedule-security` were added for `VITE_SUPABASE_URL` and the public Supabase key. Both are limited to that preview branch; the existing Production and general Preview values were left unchanged. A new Git revision is required to build with these overrides.
 - Remaining release gates: hosted preview environment and checks, verified production recovery plan, production migrations/admin provisioning/deploy with XHigh review, then restore temporary connector permissions. The continuation automation was found PAUSED and that status was preserved; its stale test-permission prompt was corrected.
 
 ## Earlier release status (2026-09-15, after GitHub access restored)
