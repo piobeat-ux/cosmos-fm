@@ -6,31 +6,22 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src'),
+      '@': resolve(import.meta.dirname, './src'),
     },
   },
   base: '/',
   build: {
-    target: 'es2015',
-    minify: 'esbuild',
+    target: 'es2020',
+    minify: 'oxc',
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
     cssCodeSplit: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          supabase: ['@supabase/supabase-js'],
-          icons: ['lucide-react'],
-        },
-      },
-    },
     chunkSizeWarningLimit: 1000,
   },
   server: {
     port: 5173,
-    host: true,
+    host: '127.0.0.1',
   },
   optimizeDeps: {
     include: ['react', 'react-dom', '@supabase/supabase-js', 'lucide-react'],

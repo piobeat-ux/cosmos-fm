@@ -3,7 +3,7 @@ import { useData } from '@/context/DataContext';
 import { Navigation, Plus, Trash2, Edit, X, GripVertical } from 'lucide-react';
 
 export function NavigationPage() {
-  const { navigation, navigationLinks, addNavigationLink, editNavigationLink, removeNavigationLink } = useData();
+  const { navigation, addNavigationLink, editNavigationLink, removeNavigationLink } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({ label: '', url: '#/', type: 'anchor', order_index: 1, is_active: true });
@@ -11,18 +11,28 @@ export function NavigationPage() {
   const [message, setMessage] = useState('');
 
   const handleSubmit = async () => {
+    if (saving) return;
     if (!formData.label) { setMessage('❌ Укажите название'); return; }
     setSaving(true);
     try {
       if (editingItem) await editNavigationLink(editingItem.id, formData);
       else await addNavigationLink(formData);
       setMessage('✅ Сохранено!');
-      setTimeout(() => { setIsModalOpen(false); setEditingItem(null); setFormData({ label: '', url: '#/', type: 'anchor', order_index: 1, is_active: true }); setMessage(''); }, 800);
+      setIsModalOpen(false); setEditingItem(null); setFormData({ label: '', url: '#/', type: 'anchor', order_index: 1, is_active: true });
     } catch (e) { setMessage('❌ ' + e.message); }
     finally { setSaving(false); }
   };
 
+  const handleDelete = async (id: string) => {
+    if (saving || !confirm('Удалить запись?')) return;
+    setSaving(true); setMessage('');
+    try { await removeNavigationLink(id); setMessage('✅ Удалено'); }
+    catch (cause) { setMessage('❌ ' + (cause instanceof Error ? cause.message : 'Не удалось удалить запись.')); }
+    finally { setSaving(false); }
+  };
+
   const handleEdit = (item) => {
+    if (saving) return;
     setEditingItem(item);
     setFormData({ 
       label: item.label || '', 
@@ -38,12 +48,12 @@ export function NavigationPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2"><Navigation className="w-6 h-6 text-[#6366f1]" /> Навигация <span className="text-sm text-[#4A6578]">({(navigationLinks || navigation || []).length})</span></h1>
+        <h1 className="text-2xl font-bold flex items-center gap-2"><Navigation className="w-6 h-6 text-[#6366f1]" /> Навигация <span className="text-sm text-[#4A6578]">({navigation.length})</span></h1>
         <button onClick={() => { setEditingItem(null); setFormData({ label: '', url: '#/', type: 'anchor', order_index: 1, is_active: true }); setIsModalOpen(true); }} className="btn-primary flex items-center gap-2"><Plus className="w-5 h-5" /> Добавить</button>
       </div>
       {message && <div className={`mb-4 p-3 rounded-xl ${message.includes('✅') ? 'bg-[#22c55e]/10 text-[#22c55e]' : 'bg-[#ef4444]/10 text-[#ef4444]'}`}>{message}</div>}
       <div className="space-y-3">
-        {(navigationLinks || navigation || []).length === 0 ? <p className="text-center py-12 text-[#4A6578]">Нет элементов навигации</p> : (navigationLinks || navigation || []).sort((a, b) => a.order_index - b.order_index).map(link => (
+        {navigation.length === 0 ? <p className="text-center py-12 text-[#4A6578]">Нет элементов навигации</p> : [...navigation].sort((a, b) => a.order_index - b.order_index).map(link => (
           <div key={link.id} className="glass-card rounded-xl p-4">
             <div className="flex items-center gap-4">
               <GripVertical className="w-5 h-5 text-[#4A6578] cursor-move" />
@@ -58,7 +68,7 @@ export function NavigationPage() {
               </div>
               <div className="flex gap-2">
                 <button onClick={() => handleEdit(link)} className="py-2 px-3 rounded-lg bg-[#6366f1]/10 text-[#6366f1] hover:bg-[#6366f1]/20 transition"><Edit className="w-4 h-4" /></button>
-                <button onClick={() => { if(confirm('Удалить?')) removeNavigationLink(link.id); }} className="py-2 px-3 rounded-lg bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/20 transition"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => void handleDelete(link.id)} disabled={saving} aria-label="Удалить запись" className="py-2 px-3 rounded-lg bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/20 transition"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
           </div>

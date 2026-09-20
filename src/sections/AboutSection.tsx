@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useData } from '@/context/DataContext';
+import { parseFaq } from '@/lib/content-validation';
 import { Users, Radio, Headphones, Star, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
 
 const COLORS = {
@@ -25,17 +26,7 @@ export function AboutSection() {
 
   const cities = (settings.about_cities || 'Москва • Санкт-Петербург • Сочи').split('•').map(c => c.trim());
 
-  // Parse FAQ from settings
-  let faqs = [];
-  try {
-    if (settings.faq_items) {
-      faqs = typeof settings.faq_items === 'string' 
-        ? JSON.parse(settings.faq_items) 
-        : settings.faq_items;
-    }
-  } catch (e) {
-    console.error('Error parsing FAQ:', e);
-  }
+  const faqs = parseFaq(settings.faq_items);
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -97,7 +88,7 @@ export function AboutSection() {
             </div>
 
             <div className="space-y-3">
-              {faqs.map((faq: any, index: number) => (
+              {faqs.map((faq, index) => (
                 <div
                   key={index}
                   className="rounded-2xl overflow-hidden border-2"

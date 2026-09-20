@@ -11,18 +11,28 @@ export function HotelsPage() {
   const [message, setMessage] = useState('');
 
   const handleSubmit = async () => {
+    if (saving) return;
     if (!formData.name) { setMessage('❌ Укажите название'); return; }
     setSaving(true);
     try {
       if (editingItem) await editHotel(editingItem.id, formData);
       else await addHotel(formData);
       setMessage('✅ Сохранено!');
-      setTimeout(() => { setIsModalOpen(false); setEditingItem(null); setFormData({ name: '', city: '', address: '' }); setMessage(''); }, 800);
+      setIsModalOpen(false); setEditingItem(null); setFormData({ name: '', city: '', address: '' });
     } catch (e) { setMessage('❌ ' + e.message); }
     finally { setSaving(false); }
   };
 
+  const handleDelete = async (id: string) => {
+    if (saving || !confirm('Удалить запись?')) return;
+    setSaving(true); setMessage('');
+    try { await removeHotel(id); setMessage('✅ Удалено'); }
+    catch (cause) { setMessage('❌ ' + (cause instanceof Error ? cause.message : 'Не удалось удалить запись.')); }
+    finally { setSaving(false); }
+  };
+
   const handleEdit = (item) => {
+    if (saving) return;
     setEditingItem(item);
     setFormData({ name: item.name||'', city: item.city||'', address: item.address||'' });
     setIsModalOpen(true);
@@ -49,7 +59,7 @@ export function HotelsPage() {
             </div>
             <div className="flex gap-2 mt-4">
               <button onClick={() => handleEdit(h)} className="flex-1 py-2 rounded-lg bg-[#6366f1]/10 text-[#6366f1] hover:bg-[#6366f1]/20 transition text-sm"><Edit className="w-4 h-4 inline mr-1" /> Изменить</button>
-              <button onClick={() => { if(confirm('Удалить?')) removeHotel(h.id); }} className="py-2 px-3 rounded-lg bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/20 transition"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={() => void handleDelete(h.id)} disabled={saving} aria-label="Удалить запись" className="py-2 px-3 rounded-lg bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/20 transition"><Trash2 className="w-4 h-4" /></button>
             </div>
           </div>
         ))}

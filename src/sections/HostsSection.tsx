@@ -1,4 +1,3 @@
-import { Users } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 
 export function HostsSection() {

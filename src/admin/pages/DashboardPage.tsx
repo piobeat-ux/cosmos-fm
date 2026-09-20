@@ -1,4 +1,4 @@
-import { Calendar, Users, Headphones, Tag, Plus } from 'lucide-react';
+import { Calendar, Users, Headphones, Tag } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 
 const COLORS = {
@@ -47,24 +47,24 @@ export function DashboardPage() {
       <div className="rounded-2xl p-6 shadow-lg mb-8" style={{ background: COLORS.white, border: `1px solid ${COLORS.neppy}20` }}>
         <h2 className="text-xl font-bold mb-4" style={{ color: COLORS.text }}>Быстрые действия</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 rounded-xl transition-all hover:scale-105" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})`, color: COLORS.white }}>
+          <a href="#/admin/shows" className="p-4 rounded-xl transition-all hover:scale-105" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})`, color: COLORS.white }}>
             <div className="flex items-center gap-3">
               <Calendar className="w-5 h-5" />
-              <span className="font-bold">Добавить передачу</span>
+              <span className="font-bold">Управление передачами</span>
             </div>
-          </button>
-          <button className="p-4 rounded-xl transition-all hover:scale-105" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})`, color: COLORS.white }}>
+          </a>
+          <a href="#/admin/calendar" className="p-4 rounded-xl transition-all hover:scale-105" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})`, color: COLORS.white }}>
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5" />
-              <span className="font-bold">Добавить ведущего</span>
+              <span className="font-bold">Календарь эфиров</span>
             </div>
-          </button>
-          <button className="p-4 rounded-xl transition-all hover:scale-105" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})`, color: COLORS.white }}>
+          </a>
+          <a href="#/admin/podcasts" className="p-4 rounded-xl transition-all hover:scale-105" style={{ background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})`, color: COLORS.white }}>
             <div className="flex items-center gap-3">
               <Headphones className="w-5 h-5" />
-              <span className="font-bold">Добавить подкаст</span>
+              <span className="font-bold">Управление подкастами</span>
             </div>
-          </button>
+          </a>
         </div>
       </div>
 
@@ -77,7 +77,7 @@ export function DashboardPage() {
               <div key={show.id} className="flex items-center justify-between p-3 rounded-xl" style={{ background: COLORS.bg + '40' }}>
                 <div>
                   <h3 className="font-bold" style={{ color: COLORS.text }}>{show.title}</h3>
-                  <p className="text-sm" style={{ color: COLORS.textMuted }}>{show.time} • {show.day_of_week}</p>
+                  <p className="text-sm" style={{ color: COLORS.textMuted }}>{show.published === false ? 'Черновик' : 'Эфиры — в календаре'}</p>
                 </div>
                 <span className="text-sm px-3 py-1 rounded-full" style={{ background: COLORS.neppy + '20', color: COLORS.purple }}>{show.category}</span>
               </div>

@@ -1,37 +1,51 @@
-import { useState } from 'react';
-import { Radio, Image, Type, Mail, Phone, MapPin, Instagram, Youtube, Music2, Save, RotateCcw, HelpCircle, FileText } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Radio, Image, Type, Mail, Phone, MapPin, Camera as Instagram, Video as Youtube, Music2, Save, RotateCcw, HelpCircle, FileText } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { ImageUpload } from '@/admin/components/ImageUpload';
+
+const SectionTitle = ({ icon: Icon, title }) => (
+  <div className="flex items-center gap-3 mb-4">
+    <div className="w-10 h-10 rounded-xl bg-[#6366f1]/20 flex items-center justify-center"><Icon className="w-5 h-5 text-[#6366f1]" /></div>
+    <h2 className="text-lg font-bold">{title}</h2>
+  </div>
+);
 
 export function SettingsPage() {
   const { settings, updateSettings } = useData();
   const [form, setForm] = useState({ ...settings });
   const [saved, setSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const revision = useRef(0);
+
+  useEffect(() => { if (!dirty) setForm({ ...settings }); }, [settings, dirty]);
 
   const handleChange = (field, value) => {
+    revision.current++;
+    setDirty(true);
     setForm(prev => ({ ...prev, [field]: value }));
     setSaved(false);
   };
 
   const handleSave = async () => {
-    await updateSettings(form);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    if (saving || uploading) return;
+    const savedRevision = revision.current;
+    setSaving(true);
+    setError('');
+    try { await updateSettings(form); if (revision.current === savedRevision) { setSaved(true); setDirty(false); } }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'Не удалось сохранить настройки.'); }
+    finally { setSaving(false); }
   };
 
   const handleReset = () => {
+    revision.current++;
+    setDirty(false);
+    setError('');
     setForm({ ...settings });
     setSaved(false);
   };
-
-  const SectionTitle = ({ icon: Icon, title }) => (
-    <div className="flex items-center gap-3 mb-4">
-      <div className="w-10 h-10 rounded-xl bg-[#6366f1]/20 flex items-center justify-center">
-        <Icon className="w-5 h-5 text-[#6366f1]" />
-      </div>
-      <h2 className="text-lg font-bold">{title}</h2>
-    </div>
-  );
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -39,17 +53,18 @@ export function SettingsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Настройки сайта</h1>
         <div className="flex gap-3">
-          <button onClick={handleReset} className="btn-secondary flex items-center gap-2">
+          <button onClick={handleReset} disabled={saving || uploading} className="btn-secondary flex items-center gap-2">
             <RotateCcw className="w-4 h-4" />
             Сбросить
           </button>
-          <button onClick={handleSave} className="btn-primary flex items-center gap-2">
+          <button onClick={handleSave} disabled={saving || uploading} className="btn-primary flex items-center gap-2">
             <Save className="w-4 h-4" />
-            {saved ? 'Сохранено!' : 'Сохранить'}
+            {saving ? 'Сохранение…' : saved ? 'Сохранено!' : 'Сохранить'}
           </button>
         </div>
       </div>
 
+      {error && <p role="alert" className="text-red-700">{error}</p>}
       {saved && (
         <div className="p-4 rounded-xl bg-[#22c55e]/10 border border-[#22c55e]/20 text-[#22c55e]">
           Настройки успешно сохранены! Обновите главную страницу, чтобы увидеть изменения.
@@ -95,6 +110,7 @@ export function SettingsPage() {
           <div>
             <label className="block text-sm text-[#4A6578] mb-2">Обложка Hero (персонаж)</label>
             <ImageUpload
+              onBusyChange={setUploading}
               value={form.hero_cover_image || ''}
               onChange={(v) => handleChange('hero_cover_image', v)}
             />

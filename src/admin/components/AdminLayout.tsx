@@ -1,4 +1,4 @@
-import { Radio, LayoutDashboard, Radio as RadioIcon, Users, Music, Tag, Building2, Link, Settings, LogOut, Menu, X } from 'lucide-react';
+import { Radio, CalendarDays, LayoutDashboard, Radio as RadioIcon, Users, Music, Tag, Building2, Link, Settings, LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
 const COLORS = {
@@ -16,6 +16,7 @@ const COLORS = {
 
 const menuItems = [
   { id: 'dashboard', label: 'Дашборд', icon: LayoutDashboard },
+  { id: 'calendar', label: 'Календарь эфиров', icon: CalendarDays },
   { id: 'shows', label: 'Передачи', icon: RadioIcon },
   { id: 'hosts', label: 'Ведущие', icon: Users },
   { id: 'podcasts', label: 'Подкасты', icon: Music },
@@ -50,7 +51,7 @@ export function AdminLayout({ children, onLogout, currentPage, onNavigate }) {
               return (
                 <button
                   key={item.id}
-                  onClick={() => onNavigate(item.id)}
+                  onClick={() => { onNavigate(item.id); setSidebarOpen(false); }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive ? 'font-bold' : ''}`}
                   style={isActive 
                     ? { background: `linear-gradient(135deg, ${COLORS.neppy}, ${COLORS.purple})`, color: COLORS.white }

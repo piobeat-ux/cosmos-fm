@@ -3,10 +3,14 @@ dist
 .env
 .env.local
 .env.production.local
+.env.*.local
+.release-local/
 *.log
 .DS_Store
+supabase/.temp/
 *.backup*
 *.sql
+!supabase/migrations/*.sql
+!tests/fixtures/*.sql
 fix-*.js
 test-*.js
-TESTING.md

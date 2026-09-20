@@ -1,16 +1,14 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { DataProvider, useData } from '@/context/DataContext';
 import { AudioProvider } from '@/context/AudioContext';
+import { StationBridge } from '@/context/StationBridge';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { MiniPlayer } from '@/components/MiniPlayer';
 import { BottomNav } from '@/components/BottomNav';
 import { HomeSection } from '@/sections/HomeSection';
-import { ScheduleSection } from '@/sections/ScheduleSection';
-import { HostsSection } from '@/sections/HostsSection';
-import { PodcastsSection } from '@/sections/PodcastsSection';
 import { AboutSection } from '@/sections/AboutSection';
-import { FAQSection } from '@/sections/FAQSection';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { LoginPage } from '@/admin/pages/LoginPage';
 import { AdminLayout } from '@/admin/components/AdminLayout';
@@ -27,6 +25,7 @@ const LazyPodcastsSection = lazy(() => import('@/sections/PodcastsSection').then
 const LazyHostsSection = lazy(() => import('@/sections/HostsSection').then(m => ({ default: m.HostsSection })));
 const LazyScheduleSection = lazy(() => import('@/sections/ScheduleSection').then(m => ({ default: m.ScheduleSection })));
 const LazyFAQSection = lazy(() => import('@/sections/FAQSection').then(m => ({ default: m.FAQSection })));
+const CalendarPage = lazy(() => import('@/admin/pages/CalendarPage').then(m => ({ default: m.CalendarPage })));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center" style={{ background: '#B6E0EE' }}>
@@ -60,6 +59,7 @@ function FrontLayout() {
     else if (h === '#/hosts' || h === '#hosts') setActiveTab('hosts');
     else if (h === '#/podcasts' || h === '#podcasts') setActiveTab('podcasts');
     else if (h === '#/about' || h === '#about') setActiveTab('about');
+    else if (h === '#/faq' || h === '#faq') setActiveTab('faq');
     else setActiveTab('home');
   }, [hash]);
 
@@ -131,18 +131,15 @@ function FrontLayout() {
 }
 
 function AdminRoutes() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isAdmin, loading, signOut } = useAuth();
+  const [logoutError, setLogoutError] = useState('');
   const [adminPage, setAdminPage] = useState('dashboard');
   const hash = useHashRouter();
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem('cosmos_fm_admin') === 'true';
-    setIsLoggedIn(loggedIn);
-  }, []);
-
-  useEffect(() => {
     const h = window.location.hash;
-    if (h.includes('/shows')) setAdminPage('shows');
+    if (h.includes('/calendar')) setAdminPage('calendar');
+    else if (h.includes('/shows')) setAdminPage('shows');
     else if (h.includes('/hosts')) setAdminPage('hosts');
     else if (h.includes('/podcasts')) setAdminPage('podcasts');
     else if (h.includes('/categories')) setAdminPage('categories');
@@ -152,18 +149,22 @@ function AdminRoutes() {
     else setAdminPage('dashboard');
   }, [hash]);
 
-  const handleLogin = () => { localStorage.setItem('cosmos_fm_admin', 'true'); setIsLoggedIn(true); };
-  const handleLogout = () => { localStorage.removeItem('cosmos_fm_admin'); setIsLoggedIn(false); window.location.hash = ''; };
+  const handleLogout = async () => {
+    try { await signOut(); window.location.hash = ''; }
+    catch (cause) { setLogoutError(cause instanceof Error ? cause.message : 'Не удалось выйти.'); }
+  };
   const navigateTo = (page) => {
     setAdminPage(page);
     window.location.hash = '#/admin' + (page === 'dashboard' ? '' : '/' + page);
   };
 
-  if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
+  if (loading) return <LoadingFallback />;
+  if (!isAdmin) return <LoginPage />;
 
   const renderAdminPage = () => {
     switch (adminPage) {
       case 'dashboard': return <DashboardPage />;
+      case 'calendar': return <Suspense fallback={<LoadingFallback />}><CalendarPage /></Suspense>;
       case 'shows': return <ShowsPage />;
       case 'hosts': return <HostsPage />;
       case 'podcasts': return <PodcastsPage />;
@@ -177,6 +178,7 @@ function AdminRoutes() {
 
   return (
     <AdminLayout onLogout={handleLogout} currentPage={adminPage} onNavigate={navigateTo}>
+      {logoutError && <p role="alert" className="mb-4 text-red-700">{logoutError}</p>}
       {renderAdminPage()}
     </AdminLayout>
   );
@@ -187,11 +189,12 @@ function App() {
   const isAdmin = hash.startsWith('#/admin');
 
   return (
-    <AudioProvider>
+    <AuthProvider><AudioProvider>
       <DataProvider>
+        <StationBridge />
         {isAdmin ? <AdminRoutes /> : <FrontLayout />}
       </DataProvider>
-    </AudioProvider>
+    </AudioProvider></AuthProvider>
   );
 }
 
